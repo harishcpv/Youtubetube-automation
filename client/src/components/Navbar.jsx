@@ -7,18 +7,40 @@ import {
   Rocket, 
   Zap, 
   DownloadCloud, 
-  CheckCircle2, 
+  Globe, 
   Smartphone, 
   MonitorPlay 
 } from 'lucide-react';
 
-export default function Navbar({ activeTab, setActiveTab, aspectRatio, setAspectRatio, onOpenExport }) {
+export default function Navbar({ 
+  activeTab, 
+  setActiveTab, 
+  aspectRatio, 
+  setAspectRatio, 
+  selectedLanguage, 
+  setSelectedLanguage, 
+  onOpenExport 
+}) {
   const tabs = [
     { id: 'autopilot', label: 'Auto-Pilot Mode', icon: Zap, highlight: true },
     { id: 'video', label: 'Video & Hook Studio', icon: Video },
     { id: 'policy', label: 'Policy & Copyright RAG', icon: ShieldCheck },
     { id: 'thumbnail', label: 'Viral Thumbnail Canvas', icon: ImageIcon },
     { id: 'seo', label: 'SEO & Metadata', icon: Rocket },
+  ];
+
+  const languages = [
+    { code: 'en', name: 'English', flag: '🇺🇸' },
+    { code: 'hi', name: 'हिन्दी (Hindi)', flag: '🇮🇳' },
+    { code: 'te', name: 'తెలుగు (Telugu)', flag: '🇮🇳' },
+    { code: 'ta', name: 'தமிழ் (Tamil)', flag: '🇮🇳' },
+    { code: 'es', name: 'Español (Spanish)', flag: '🇪🇸' },
+    { code: 'fr', name: 'Français (French)', flag: '🇫🇷' },
+    { code: 'de', name: 'Deutsch (German)', flag: '🇩🇪' },
+    { code: 'ja', name: '日本語 (Japanese)', flag: '🇯🇵' },
+    { code: 'ko', name: '한국어 (Korean)', flag: '🇰🇷' },
+    { code: 'pt', name: 'Português', flag: '🇧🇷' },
+    { code: 'ar', name: 'العربية (Arabic)', flag: '🇸🇦' },
   ];
 
   return (
@@ -40,7 +62,7 @@ export default function Navbar({ activeTab, setActiveTab, aspectRatio, setAspect
             </div>
             <p className="text-xs text-slate-400 flex items-center gap-2">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              4 Agents Active • FFmpeg 9.0 • Policy RAG
+              All Languages Voiceover & Subtitles Supported
             </p>
           </div>
         </div>
@@ -69,8 +91,24 @@ export default function Navbar({ activeTab, setActiveTab, aspectRatio, setAspect
           })}
         </nav>
 
-        {/* Right Action Controls: Aspect Ratio + Export Bundle */}
-        <div className="flex items-center gap-3">
+        {/* Right Action Controls: Language + Aspect Ratio + Export */}
+        <div className="flex items-center gap-2.5">
+          {/* Language Selector Dropdown */}
+          <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-xs">
+            <Globe className="w-3.5 h-3.5 text-indigo-400" />
+            <select
+              value={selectedLanguage}
+              onChange={(e) => setSelectedLanguage(e.target.value)}
+              className="bg-transparent text-white font-medium text-xs focus:outline-none cursor-pointer"
+            >
+              {languages.map((l) => (
+                <option key={l.code} value={l.code} className="bg-slate-900 text-white">
+                  {l.flag} {l.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Format Switcher */}
           <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5 text-xs">
             <button

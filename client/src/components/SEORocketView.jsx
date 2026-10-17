@@ -12,7 +12,7 @@ import {
   Loader2 
 } from 'lucide-react';
 
-export default function SEORocketView({ projectData }) {
+export default function SEORocketView({ projectData, selectedLanguage = 'en' }) {
   const [topic, setTopic] = useState('5 Mind-Blowing AI Tools in 2026');
   const [niche, setNiche] = useState('Tech & AI');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -36,7 +36,7 @@ export default function SEORocketView({ projectData }) {
     } else {
       handleGenerateSEO();
     }
-  }, [projectData]);
+  }, [projectData, selectedLanguage]);
 
   const handleGenerateSEO = async () => {
     setIsGenerating(true);
@@ -44,7 +44,7 @@ export default function SEORocketView({ projectData }) {
       const res = await fetch('/api/seo/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, niche })
+        body: JSON.stringify({ topic, niche, language: selectedLanguage })
       });
       const data = await res.json();
       if (data.success) {

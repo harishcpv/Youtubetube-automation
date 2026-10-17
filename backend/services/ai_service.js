@@ -1,83 +1,99 @@
 class AIService {
   constructor() {
-    // Check if Gemini or OpenAI API keys exist in env, otherwise fallback to high-intelligence heuristic generation
     this.geminiKey = process.env.GEMINI_API_KEY || '';
+
+    // Multi-Language Intro Hook Templates
+    this.localizedHooks = {
+      en: [
+        { style: '🚨 Pattern Interrupt (Shock & Awe)', template: (t) => `Stop doing this immediately if you want ${t}!`, voice: 'Urgent, high-energy' },
+        { style: '🔍 Curiosity Loop (Open Loop)', template: (t) => `There is a hidden secret about ${t} that nobody talks about...`, voice: 'Suspenseful' },
+        { style: '⚡ Extreme Stakes (FOMO)', template: (t) => `If you don't know this in 2026, you will be left behind in ${t}!`, voice: 'Direct, serious' },
+        { style: '❓ Counter-Intuitive Truth', template: (t) => `Everything you were told about ${t} is completely wrong. Here's why.`, voice: 'Casual authority' }
+      ],
+      hi: [
+        { style: '🚨 Pattern Interrupt (Shock & Awe)', template: (t) => `अगर आप ${t} चाहते हैं, तो इसे तुरंत करना बंद करें!`, voice: 'Urgent & energetic Hindi' },
+        { style: '🔍 Curiosity Loop (Open Loop)', template: (t) => `${t} के बारे में एक ऐसा गुप्त रहस्य है जिसके बारे में कोई बात नहीं करता...`, voice: 'Suspenseful Hindi' },
+        { style: '⚡ Extreme Stakes (FOMO)', template: (t) => `अगर आप 2026 में यह नहीं जानते, तो आप ${t} में बहुत पीछे रह जाएंगे!`, voice: 'Direct Hindi' },
+        { style: '❓ Counter-Intuitive Truth', template: (t) => `${t} के बारे में आपको जो कुछ भी बताया गया था वह गलत है। जानिए सच।`, voice: 'Authoritative Hindi' }
+      ],
+      te: [
+        { style: '🚨 Pattern Interrupt (Shock & Awe)', template: (t) => `మీరు ${t} పొందాలనుకుంటే, దీన్ని వెంటనే ఆపండి!`, voice: 'Urgent Telugu' },
+        { style: '🔍 Curiosity Loop (Open Loop)', template: (t) => `${t} గురించి ఎవరూ చెప్పని ఒక అద్భుతమైన రహస్యం ఉంది...`, voice: 'Intriguing Telugu' },
+        { style: '⚡ Extreme Stakes (FOMO)', template: (t) => `2026 లో ఇది తెలియకపోతే, మీరు ${t} లో చాలా వెనుకబడిపోతారు!`, voice: 'Serious Telugu' },
+        { style: '❓ Counter-Intuitive Truth', template: (t) => `${t} గురించి ఇప్పటివరకు మీకు తెలిసినదంతా తప్పు. అసలు నిజం ఇదిగో.`, voice: 'Authoritative Telugu' }
+      ],
+      ta: [
+        { style: '🚨 Pattern Interrupt (Shock & Awe)', template: (t) => `நீங்கள் ${t} செய்ய விரும்பினால், இதை உடனடியாக நிறுத்துங்கள்!`, voice: 'Urgent Tamil' },
+        { style: '🔍 Curiosity Loop (Open Loop)', template: (t) => `${t} பற்றி யாரும் சொல்லாத ஒரு ரகசியம் உள்ளது...`, voice: 'Curious Tamil' },
+        { style: '⚡ Extreme Stakes (FOMO)', template: (t) => `2026 இல் இதை நீங்கள் தெரிந்து கொள்ளவில்லை என்றால் மிகவும் பின்தங்குவீர்கள்!`, voice: 'Direct Tamil' }
+      ],
+      es: [
+        { style: '🚨 Pattern Interrupt (Shock & Awe)', template: (t) => `¡Deja de hacer esto inmediatamente si quieres dominar ${t}!`, voice: 'Urgent Spanish' },
+        { style: '🔍 Curiosity Loop (Open Loop)', template: (t) => `Hay un secreto oculto sobre ${t} del que nadie habla...`, voice: 'Intriguing Spanish' },
+        { style: '⚡ Extreme Stakes (FOMO)', template: (t) => `¡Si no sabes esto en 2026, te quedarás completamente atrás en ${t}!`, voice: 'Direct Spanish' }
+      ],
+      fr: [
+        { style: '🚨 Pattern Interrupt (Shock & Awe)', template: (t) => `Arrêtez de faire cela immédiatement si vous voulez maîtriser ${t} !`, voice: 'Urgent French' },
+        { style: '🔍 Curiosity Loop (Open Loop)', template: (t) => `Il y a un secret caché sur ${t} dont personne ne parle...`, voice: 'Suspenseful French' }
+      ],
+      de: [
+        { style: '🚨 Pattern Interrupt (Shock & Awe)', template: (t) => `Hör sofort damit auf, wenn du ${t} meistern willst!`, voice: 'Direct German' },
+        { style: '🔍 Curiosity Loop (Open Loop)', template: (t) => `Es gibt ein großes Geheimnis über ${t}, über das niemand spricht...`, voice: 'Mysterious German' }
+      ],
+      ja: [
+        { style: '🚨 Pattern Interrupt (Shock & Awe)', template: (t) => `${t}で成功したいなら、今すぐこれをやめてください！`, voice: 'High-energy Japanese' },
+        { style: '🔍 Curiosity Loop (Open Loop)', template: (t) => `誰も話さない${t}の隠された秘密があります...`, voice: 'Curious Japanese' }
+      ]
+    };
   }
 
-  // 1. Generate Intro Hooks
-  async generateHooks({ topic, audience = 'General Tech & Entertainment', format = 'Shorts' }) {
-    const cleanTopic = topic || 'How to 10x your productivity with AI';
+  // 1. Generate Multi-Language Intro Hooks
+  async generateHooks({ topic, audience = 'General', format = '16:9', language = 'en' }) {
+    const cleanTopic = topic || 'YouTube AI Automation';
+    const langCode = (language || 'en').toLowerCase().split('-')[0];
+    const hookTemplates = this.localizedHooks[langCode] || this.localizedHooks['en'];
 
-    const hooks = [
-      {
-        style: '🚨 Pattern Interrupt (Shock & Awe)',
-        text: `Stop doing this immediately if you want ${cleanTopic}!`,
-        voiceDirection: 'Urgent, direct eye-contact, fast cadence',
-        visualHook: 'Full-screen red screen flash, rapid zoom into face, bold warning badge',
-        sfxRecommended: 'boom',
-        durationSec: 3.5,
-        retentionScore: 96
-      },
-      {
-        style: '🔍 Curiosity Loop (Open Loop Mystery)',
-        text: `There is a hidden secret about ${cleanTopic} that nobody talks about...`,
-        voiceDirection: 'Intriguing, lowering pitch at the end, suspenseful',
-        visualHook: 'Cinematic slow-motion pan with a glowing mystery box or blurred background',
-        sfxRecommended: 'riser',
-        durationSec: 4.2,
-        retentionScore: 94
-      },
-      {
-        style: '⚡ Extreme Stakes (FOMO)',
-        text: `If you don't know this in 2026, you will be left behind in ${cleanTopic}!`,
-        voiceDirection: 'Empathetic yet serious, confident authority',
-        visualHook: 'Split-screen comparison: 2024 vs 2026 with rapid arrow graphics',
-        sfxRecommended: 'whoosh',
-        durationSec: 3.8,
-        retentionScore: 92
-      },
-      {
-        style: '❓ Counter-Intuitive Truth',
-        text: `Everything you were told about ${cleanTopic} is completely wrong. Here's why.`,
-        voiceDirection: 'Casual confidence, slight smile, conversational',
-        visualHook: 'Massive red "X" over common belief, then instant wipe to answer',
-        sfxRecommended: 'ding',
-        durationSec: 3.6,
-        retentionScore: 90
-      },
-      {
-        style: '📊 Instant Proof / Number Hook',
-        text: `I spent 30 days testing ${cleanTopic}, and the result was insane.`,
-        voiceDirection: 'Excited, energetic, fast-paced',
-        visualHook: 'Rapid 3-image montage showing before and after stats and charts',
-        sfxRecommended: 'pop',
-        durationSec: 4.0,
-        retentionScore: 93
-      }
-    ];
+    const hooks = hookTemplates.map((h, idx) => ({
+      style: h.style,
+      text: h.template(cleanTopic),
+      voiceDirection: h.voice,
+      visualHook: 'Rapid dynamic zoom with glowing yellow subtitle banner and sound effect riser',
+      sfxRecommended: idx % 2 === 0 ? 'boom' : 'whoosh',
+      durationSec: 3.8,
+      retentionScore: 92 + (idx * 2)
+    }));
 
     return {
       topic: cleanTopic,
       format,
+      language: langCode,
       hooks,
       recommendedHook: hooks[0]
     };
   }
 
-  // 2. Generate Timed Subtitles (SRT + JSON tokenized)
-  generateSubtitlesFromScript(script, wordsPerMinute = 150) {
+  // 2. Generate Timed Subtitles (Supports All Language Scripts & Unicode)
+  generateSubtitlesFromScript(script, wordsPerMinute = 145, language = 'en') {
     if (!script || !script.trim()) {
-      script = "Welcome to the ultimate guide! In this video, we reveal the top secrets you need to succeed. Watch till the end!";
+      script = "Welcome to the video! In this tutorial, we cover everything you need. Watch till the end!";
     }
 
-    // Split into natural bite-sized caption chunks (3-5 words each for high retention)
-    const words = script.replace(/\s+/g, ' ').trim().split(' ');
+    const langCode = (language || 'en').toLowerCase().split('-')[0];
+
+    // For Asian languages without space separation (like Japanese or Chinese), split by punctuation or 8-12 char chunks
+    let words = [];
+    if (langCode === 'ja' || langCode === 'zh') {
+      words = script.match(/.{1,10}/g) || [script];
+    } else {
+      words = script.replace(/\s+/g, ' ').trim().split(' ');
+    }
+
     const chunks = [];
     let currentChunk = [];
 
     for (let i = 0; i < words.length; i++) {
       currentChunk.push(words[i]);
-      if (currentChunk.length >= 4 || words[i].endsWith('.') || words[i].endsWith('!') || words[i].endsWith('?') || i === words.length - 1) {
+      if (currentChunk.length >= 4 || words[i].endsWith('.') || words[i].endsWith('!') || words[i].endsWith('?') || words[i].endsWith('।') || i === words.length - 1) {
         chunks.push(currentChunk.join(' '));
         currentChunk = [];
       }
@@ -112,11 +128,7 @@ class AIService {
         endTime: Number(endTime.toFixed(2)),
         duration: Number(duration.toFixed(2)),
         text: chunk,
-        words: chunkWords.map((w, wIdx) => ({
-          word: w,
-          start: Number((startTime + wIdx * (duration / chunkWords.length)).toFixed(2)),
-          end: Number((startTime + (wIdx + 1) * (duration / chunkWords.length)).toFixed(2))
-        }))
+        language: langCode
       });
 
       srtString += `${index + 1}\n${srtStartTime} --> ${srtEndTime}\n${chunk}\n\n`;
@@ -125,111 +137,91 @@ class AIService {
     return {
       totalDuration: Number(currentTime.toFixed(2)),
       subtitlesCount: subtitles.length,
+      language: langCode,
       subtitles,
       srtContent: srtString.trim()
     };
   }
 
-  // 3. Generate Viral Titles & SEO Metadata
-  async generateSEOPackage({ topic, niche = 'Tech & Business', keywords = [] }) {
-    const mainTopic = topic || 'YouTube Automation with AI';
-    const tagNiche = niche.toLowerCase().replace(/[^a-z0-9]/g, '');
+  // 3. Generate Multi-Language Viral SEO Metadata
+  async generateSEOPackage({ topic, niche = 'Tech', language = 'en' }) {
+    const mainTopic = topic || 'YouTube AI Automation';
+    const langCode = (language || 'en').toLowerCase().split('-')[0];
 
-    // Viral Titles across 5 psychology angles
-    const titles = [
-      {
-        title: `I Tried ${mainTopic} for 30 Days (SHOCKING Results)`,
-        ctrEstimate: '11.8%',
-        style: 'Personal Experiment / Storytelling',
-        capitalizedKeyword: 'SHOCKING',
-        charCount: 47
-      },
-      {
-        title: `The DEADLY Mistake Everyone Makes With ${mainTopic}`,
-        ctrEstimate: '10.4%',
-        style: 'Fear of Failure / Cautionary Hook',
-        capitalizedKeyword: 'DEADLY',
-        charCount: 54
-      },
-      {
-        title: `How to Master ${mainTopic} in 10 Minutes (2026 Guide)`,
-        ctrEstimate: '9.9%',
-        style: 'High Value / Rapid Tutorial',
-        capitalizedKeyword: '10 MINUTES',
-        charCount: 51
-      },
-      {
-        title: `Why 99% Fail at ${mainTopic} (And How to Win)`,
-        ctrEstimate: '10.9%',
-        style: 'Contrarian / Elitism',
-        capitalizedKeyword: '99% FAIL',
-        charCount: 44
-      },
-      {
-        title: `NEW ${mainTopic} Secret That Changes Everything!`,
-        ctrEstimate: '11.2%',
-        style: 'Newsjack / Urgency',
-        capitalizedKeyword: 'SECRET',
-        charCount: 48
-      }
-    ];
+    // Localized Title Archetypes
+    let titles = [];
+    if (langCode === 'hi') {
+      titles = [
+        { title: `मैंने 30 दिनों तक ${mainTopic} किया (चौंकाने वाले नतीजे)`, ctrEstimate: '12.4%', style: 'कहानी / व्यक्तिगत प्रयोग' },
+        { title: `${mainTopic} में 99% लोग यह भयानक गलती करते हैं!`, ctrEstimate: '11.1%', style: 'चेतावनी / FOMO' },
+        { title: `10 मिनट में ${mainTopic} कैसे सीखें (2026 गाइड)`, ctrEstimate: '10.5%', style: 'ट्यूटोरियल / गाइड' }
+      ];
+    } else if (langCode === 'te') {
+      titles = [
+        { title: `నేను 30 రోజులు ${mainTopic} ప్రయత్నించాను (షాకింగ్ ఫలితాలు!)`, ctrEstimate: '12.8%', style: 'వ్యక్తిగత ప్రయోగం' },
+        { title: `${mainTopic} లో 99% మంది చేసే పెద్ద తప్పు ఇదే!`, ctrEstimate: '11.5%', style: 'హెచ్చరిక / భయం' },
+        { title: `10 నిమిషాల్లో ${mainTopic} ఎలా నేర్చుకోవాలి (2026 గైడ్)`, ctrEstimate: '10.8%', style: 'కంప్లీట్ ట్యుటోరియల్' }
+      ];
+    } else if (langCode === 'ta') {
+      titles = [
+        { title: `நான் 30 நாட்கள் ${mainTopic} செய்தேன் (அதிர்ச்சி முடிவுகள்!)`, ctrEstimate: '12.2%', style: 'தனிப்பட்ட அனுபவம்' },
+        { title: `${mainTopic} பற்றி 99% பேர் செய்யும் மிகப்பெரிய தவறு!`, ctrEstimate: '11.0%', style: 'எச்சரிக்கை' }
+      ];
+    } else if (langCode === 'es') {
+      titles = [
+        { title: `Probé ${mainTopic} por 30 Días (Resultados IMPACTANTES)`, ctrEstimate: '11.9%', style: 'Experimento Personal' },
+        { title: `El Gran Error que el 99% Comete con ${mainTopic}`, ctrEstimate: '10.8%', style: 'Advertencia' },
+        { title: `Cómo Dominar ${mainTopic} en 10 Minutos (Guía 2026)`, ctrEstimate: '10.2%', style: 'Tutorial Rápido' }
+      ];
+    } else {
+      // Default English
+      titles = [
+        { title: `I Tried ${mainTopic} for 30 Days (SHOCKING Results)`, ctrEstimate: '11.8%', style: 'Personal Experiment / Storytelling', charCount: 47 },
+        { title: `The DEADLY Mistake Everyone Makes With ${mainTopic}`, ctrEstimate: '10.4%', style: 'Fear of Failure / Cautionary Hook', charCount: 54 },
+        { title: `How to Master ${mainTopic} in 10 Minutes (2026 Guide)`, ctrEstimate: '9.9%', style: 'High Value / Rapid Tutorial', charCount: 51 },
+        { title: `Why 99% Fail at ${mainTopic} (And How to Win)`, ctrEstimate: '10.9%', style: 'Contrarian / Elitism', charCount: 44 }
+      ];
+    }
 
-    // High retention description with chapters and keywords
-    const description = `Stop wasting hours on manual editing! In this video, we break down the ultimate blueprint for ${mainTopic}. Whether you are just getting started or scaling your channel, this exact step-by-step strategy will give you an unfair advantage in 2026.
-
-🔥 In this video, you'll discover:
-• The biggest pitfall that destroys 90% of beginner creators
-• How to automate your workflow using cutting-edge AI agents
-• Real case-study examples and actionable frameworks
+    const description = `In this video, we break down everything you need to know about ${mainTopic}.
 
 ⏱️ CHAPTERS / TIMESTAMPS:
-00:00 - The Uncomfortable Truth About ${mainTopic}
-00:45 - The Viral Secret Explained
-01:30 - Live Demonstration & Setup
-03:15 - Avoiding Copyright & Demonetization Traps
-04:45 - The Step-by-Step Scaling Blueprint
-06:00 - Final Golden Rule
-
-📌 RESOURCES & TOOLS MENTIONED:
-• Automated Studio Suite: https://github.com/youtube-automation-suite
-• Community Discord & Templates: Check the pinned comment below!
+00:00 - Introduction & Hook
+00:45 - Key Strategy Breakdown
+02:15 - Live Execution & Tutorial
+04:30 - Important Rules & Guidelines
+05:45 - Final Summary & Takeaways
 
 👍 Enjoyed this video? Drop a LIKE and SUBSCRIBE for weekly high-signal growth breakdowns!
 
-#${tagNiche} #YouTubeAutomation #AItools #ContentCreator #GrowthHacks`;
+#${mainTopic.replace(/[^a-zA-Z0-9]/g, '')} #YouTubeAutomation #CreatorGuide #2026`;
 
-    // 500-Character YouTube Studio Tags (comma separated)
     const baseTags = [
       mainTopic,
       `${mainTopic} tutorial`,
       `${mainTopic} 2026`,
       'youtube automation',
-      'youtube growth',
-      'ai video generator',
-      'youtube shorts tips',
+      'content creator',
       'how to go viral',
-      'video editing hacks',
-      'content creation',
-      'viral thumbnail secrets',
-      'youtube monetization'
+      'video editing',
+      'youtube growth'
     ];
-    const tagsString = baseTags.join(', ');
 
     const hashtags = [
-      `#${tagNiche}`,
+      `#${mainTopic.replace(/[^a-zA-Z0-9]/g, '')}`,
       '#YouTubeAutomation',
       '#ContentCreator',
-      '#ViralGrowth',
-      '#AITools'
+      '#GrowthTips'
     ];
 
     return {
       topic: mainTopic,
+      language: langCode,
       titles,
       selectedTitle: titles[0].title,
       description,
       tags: baseTags,
-      tagsFormatted: tagsString,
+      tagsFormatted: baseTags.join(', '),
       hashtags
     };
   }
@@ -242,50 +234,18 @@ class AIService {
       {
         id: 'mrbeast-style',
         name: '🔥 High-Energy Shock & Contrast (MrBeast Style)',
-        background: 'Split color: Electric Neon Cyan (#06B6D4) on left, Fiery Orange/Red (#EF4444) on right',
+        background: 'Split color: Electric Neon Cyan on left, Fiery Orange/Red on right',
         textOverlay: 'IT FINALLY HAPPENED!',
-        textStyle: {
-          font: 'Impact / Montserrat ExtraBold',
-          fillColor: '#FFE600',
-          strokeColor: '#000000',
-          strokeWidth: 8,
-          shadow: '0px 10px 25px rgba(0,0,0,0.8)'
-        },
-        focalElement: 'Expressive wide-eyed face looking astonished, pointing at a glowing holographic screen showing 1,000,000 views',
-        badges: ['🔴 LIVE ALERT', 'NEW 2026', '100% FREE'],
-        promptForAI: `Hyper-realistic YouTube thumbnail, close-up expressive face reacting with wide eyes, dramatic cinematic rim lighting, vivid complementary colors (cyan and fiery neon orange), clean uncluttered background, 8k render, photorealistic, high click-through rate composition.`
+        focalElement: 'Expressive wide-eyed face looking astonished, pointing at glowing screen',
+        badges: ['🔴 LIVE ALERT', 'NEW 2026', '100% FREE']
       },
       {
         id: 'dark-minimalist',
         name: '🧠 Dark Curiosity & Mystery (Documentary Style)',
-        background: 'Deep Charcoal / Slate (#0B0F19) with subtle glowing cyan grid and light leak',
+        background: 'Deep Charcoal / Slate with subtle glowing cyan grid and light leak',
         textOverlay: 'THE 1% SECRET',
-        textStyle: {
-          font: 'Bebas Neue / Inter Black',
-          fillColor: '#FFFFFF',
-          strokeColor: '#000000',
-          strokeWidth: 6,
-          shadow: '0px 8px 20px rgba(0,0,0,0.7)'
-        },
-        focalElement: 'A golden key or floating futuristic AI core surrounded by warning tape with a 3D yellow question mark',
-        badges: ['DO NOT IGNORE', '⚠️ WARNING'],
-        promptForAI: `Cinematic moody YouTube thumbnail, minimalist deep slate background, dramatic single spotlight illuminating a glowing golden futuristic artifact, soft smoke atmosphere, high-end Vox / MagnatesMedia documentary aesthetic.`
-      },
-      {
-        id: 'extreme-comparison',
-        name: '⚔️ Versus & Extreme Comparison (Before vs After)',
-        background: 'Split screen with diagonal lightning slash in the center',
-        textOverlay: 'OLD WAY VS NEW WAY',
-        textStyle: {
-          font: 'Arial Black / Impact',
-          fillColor: '#00FF66',
-          strokeColor: '#000000',
-          strokeWidth: 8,
-          shadow: '0px 10px 20px rgba(0,0,0,0.9)'
-        },
-        focalElement: 'Left side: Sad desaturated stressed creator surrounded by clocks. Right side: Ultra-vibrant millionaire smiling in front of flying play buttons',
-        badges: ['10X FASTER', '0 HRS SPENT'],
-        promptForAI: `YouTube split thumbnail comparison, left side dark dull grayscale stressed person, right side hyper-vibrant glowing neon green victorious creator with golden YouTube play button, split diagonal lightning separator.`
+        focalElement: 'Floating golden futuristic core with a 3D yellow question mark',
+        badges: ['DO NOT IGNORE', '⚠️ WARNING']
       }
     ];
   }

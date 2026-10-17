@@ -6,6 +6,7 @@ const fs = require('fs');
 const aiService = require('../services/ai_service');
 const soundService = require('../services/sound_service');
 const ffmpegService = require('../services/ffmpeg_service');
+const ttsService = require('../services/tts_service');
 
 const uploadDir = path.join(__dirname, '../../uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -130,29 +131,51 @@ router.get('/longform/status/:jobId', (req, res) => {
   }
 });
 
-// 5. Generate Hooks
+// 5. Get Supported Languages
+router.get('/languages', (req, res) => {
+  try {
+    const list = ttsService.getAvailableLanguages();
+    res.json({ success: true, languages: list });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 6. Generate Multi-Language Voiceover (TTS)
+router.post('/generate-voiceover', async (req, res) => {
+  try {
+    const { text, language = 'en' } = req.body;
+    const result = await ttsService.synthesizeVoiceover({ text, lang: language });
+    res.json({ success: true, voiceover: result });
+  } catch (err) {
+    console.error('Voiceover generation error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 7. Generate Hooks (Multi-Language)
 router.post('/generate-hooks', async (req, res) => {
   try {
-    const { topic, audience, format } = req.body;
-    const result = await aiService.generateHooks({ topic, audience, format });
+    const { topic, audience, format, language = 'en' } = req.body;
+    const result = await aiService.generateHooks({ topic, audience, format, language });
     res.json({ success: true, ...result });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// 6. Generate Subtitles from script
+// 8. Generate Subtitles from script (Multi-Language)
 router.post('/generate-subtitles', (req, res) => {
   try {
-    const { script, wordsPerMinute } = req.body;
-    const result = aiService.generateSubtitlesFromScript(script, wordsPerMinute);
+    const { script, wordsPerMinute, language = 'en' } = req.body;
+    const result = aiService.generateSubtitlesFromScript(script, wordsPerMinute, language);
     res.json({ success: true, ...result });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// 7. Get SFX Library
+// 9. Get SFX Library
 router.get('/sfx-list', (req, res) => {
   try {
     const list = soundService.getAvailableSFX();

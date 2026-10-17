@@ -21,7 +21,7 @@ import {
   FolderOpen
 } from 'lucide-react';
 
-export default function VideoStudio({ aspectRatio, projectData, setProjectData }) {
+export default function VideoStudio({ aspectRatio, selectedLanguage = 'en', projectData, setProjectData }) {
   // Mode: 'smart' (any duration up to 1 hour) or 'short' (procedural / quick highlights)
   const [editingMode, setEditingMode] = useState('smart');
 
@@ -35,6 +35,15 @@ export default function VideoStudio({ aspectRatio, projectData, setProjectData }
   // Video Inspection Metadata
   const [videoMeta, setVideoMeta] = useState(null);
   const [isInspecting, setIsInspecting] = useState(false);
+
+  // Multi-Language Voiceover & Subtitles States
+  const [voiceoverText, setVoiceoverText] = useState(
+    'Welcome to the video! In this episode we break down everything you need to know. Watch till the end!'
+  );
+  const [voiceoverUrl, setVoiceoverUrl] = useState('');
+  const [isGeneratingVoiceover, setIsGeneratingVoiceover] = useState(false);
+  const [subtitles, setSubtitles] = useState([]);
+  const [isGeneratingSubs, setIsGeneratingSubs] = useState(false);
 
   // Silence Detection States
   const [silenceData, setSilenceData] = useState(null);
@@ -170,6 +179,57 @@ export default function VideoStudio({ aspectRatio, projectData, setProjectData }
       console.error('Error detecting silence:', err);
     } finally {
       setIsDetectingSilence(false);
+    }
+  };
+
+  // Generate Multi-Language Voiceover (TTS)
+  const handleGenerateVoiceover = async () => {
+    if (!voiceoverText.trim()) return;
+    setIsGeneratingVoiceover(true);
+    try {
+      const res = await fetch('/api/video/generate-voiceover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: voiceoverText,
+          language: selectedLanguage
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.voiceover) {
+        setVoiceoverUrl(data.voiceover.downloadUrl);
+      } else {
+        alert(data.error || 'Voiceover generation failed');
+      }
+    } catch (err) {
+      console.error('Voiceover error:', err);
+    } finally {
+      setIsGeneratingVoiceover(false);
+    }
+  };
+
+  // Generate Multi-Language Subtitles
+  const handleGenerateSubtitles = async () => {
+    if (!voiceoverText.trim()) return;
+    setIsGeneratingSubs(true);
+    try {
+      const res = await fetch('/api/video/generate-subtitles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          script: voiceoverText,
+          wordsPerMinute: 145,
+          language: selectedLanguage
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.subtitles) {
+        setSubtitles(data.subtitles);
+      }
+    } catch (err) {
+      console.error('Subtitles error:', err);
+    } finally {
+      setIsGeneratingSubs(false);
     }
   };
 
@@ -478,6 +538,78 @@ export default function VideoStudio({ aspectRatio, projectData, setProjectData }
                       <p className="font-bold text-white">{silenceData.silenceCount} Pauses Found</p>
                       <p className="text-[10px] text-indigo-300">Total Dead Air: {silenceData.totalSilentMinutes}m ({silenceData.totalSilentSec}s)</p>
                     </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Multi-Language Voiceover & Subtitles Card */}
+              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Volume2 className="w-4 h-4 text-indigo-400" />
+                      3. Multi-Language Voiceover (TTS) & Subtitles
+                    </h4>
+                    <p className="text-[10px] text-slate-400">
+                      Generate speech and synced captions in any language (English, Hindi, Telugu, Tamil, Spanish, etc.)
+                    </p>
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase">
+                    Lang: {selectedLanguage}
+                  </span>
+                </div>
+
+                <textarea
+                  rows={3}
+                  value={voiceoverText}
+                  onChange={(e) => setVoiceoverText(e.target.value)}
+                  placeholder="Enter script text for voiceover and subtitles..."
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 custom-scrollbar"
+                />
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={handleGenerateVoiceover}
+                    disabled={isGeneratingVoiceover || !voiceoverText.trim()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs shadow-md transition disabled:opacity-40"
+                  >
+                    {isGeneratingVoiceover ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Volume2 className="w-3.5 h-3.5" />}
+                    Generate Voiceover (TTS)
+                  </button>
+
+                  <button
+                    onClick={handleGenerateSubtitles}
+                    disabled={isGeneratingSubs || !voiceoverText.trim()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition disabled:opacity-40"
+                  >
+                    {isGeneratingSubs ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5 text-emerald-400" />}
+                    Sync Subtitles (.SRT)
+                  </button>
+                </div>
+
+                {/* Voiceover Audio Player */}
+                {voiceoverUrl && (
+                  <div className="p-3 rounded-lg bg-indigo-950/40 border border-indigo-500/30 space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-white">
+                      <span>✓ Voiceover Generated ({selectedLanguage.toUpperCase()})</span>
+                      <a href={voiceoverUrl} download className="text-indigo-300 hover:text-white flex items-center gap-1 text-[10px]">
+                        <Download className="w-3 h-3" /> Download MP3
+                      </a>
+                    </div>
+                    <audio controls src={voiceoverUrl} className="w-full h-8" />
+                  </div>
+                )}
+
+                {/* Subtitles Preview */}
+                {subtitles.length > 0 && (
+                  <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 max-h-32 overflow-y-auto custom-scrollbar space-y-1 text-xs">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block">Synchronized Captions ({subtitles.length}):</span>
+                    {subtitles.map((s, idx) => (
+                      <div key={idx} className="flex gap-2 text-[11px] text-slate-300">
+                        <span className="text-indigo-400 font-mono shrink-0">{s.startTime}s</span>
+                        <span className="truncate">{s.text}</span>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

@@ -19,6 +19,7 @@ import confetti from 'canvas-confetti';
 
 export default function AutopilotView({ 
   aspectRatio, 
+  selectedLanguage = 'en',
   onPackageGenerated, 
   projectData, 
   setProjectData 
@@ -39,7 +40,7 @@ export default function AutopilotView({
 
   const agentSteps = [
     { name: 'Hook & Retention Agent', desc: 'Crafting psychological intro hook & camera directions', icon: Flame },
-    { name: 'Subtitles & Voice Agent', desc: 'Generating timed captions & sound effect cues', icon: Volume2 },
+    { name: 'Multi-Language Voice & Subs', desc: 'Generating native voiceover audio & timed subtitles', icon: Volume2 },
     { name: 'Policy & Copyright RAG', desc: 'Auditing YouTube Community Guidelines & Content ID', icon: ShieldCheck },
     { name: 'Viral Thumbnail Agent', desc: 'Engineering high-contrast visual composition & 3D text', icon: Eye },
     { name: 'SEO Rocket Agent', desc: 'Generating high-CTR titles, chapters & 500-char tags', icon: Sparkles },
@@ -63,7 +64,8 @@ export default function AutopilotView({
         body: JSON.stringify({
           topic,
           niche,
-          format: aspectRatio === '9:16' ? 'Shorts' : '16:9'
+          format: aspectRatio === '9:16' ? 'Shorts' : '16:9',
+          language: selectedLanguage || 'en'
         })
       });
 
@@ -310,6 +312,27 @@ export default function AutopilotView({
                       </div>
                     ))}
                   </div>
+
+                  {/* Multi-Language Voiceover Player */}
+                  {projectData.voiceover?.downloadUrl && (
+                    <div className="p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30 space-y-2 pt-2 border-t border-slate-800">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <Volume2 className="w-3.5 h-3.5 text-indigo-400" />
+                          Multi-Language Voiceover ({projectData.language?.toUpperCase() || 'EN'})
+                        </span>
+                        <a
+                          href={projectData.voiceover.downloadUrl}
+                          download
+                          className="text-[10px] font-semibold text-indigo-300 hover:text-white flex items-center gap-1"
+                        >
+                          <Download className="w-3 h-3" />
+                          Download MP3
+                        </a>
+                      </div>
+                      <audio controls src={projectData.voiceover.downloadUrl} className="w-full h-8" />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
