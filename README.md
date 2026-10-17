@@ -43,9 +43,48 @@ flowchart TD
 
 ---
 
+## 🎬 4-Clip Batch Auto-Stitcher Pipeline
+
+Upload 2, 3, 4 or more raw video footages. The master automation engine automatically:
+1. **Normalizes & Stitches** all raw takes into one seamless sequence (handling any resolution and duration up to 1 hour).
+2. **Injects Intro Hook** with attention-grabbing animated yellow/black text overlay in the first 4 seconds.
+3. **Generates Native AI Voiceover** in your chosen language (English, Telugu, Hindi, Tamil, Spanish, German, Japanese, etc.).
+4. **Layers Royalty-Free Background Music & SFX** with automated audio ducking (lowers clip audio to 25% under the voiceover).
+5. **Burns Timed Multilingual Subtitles (.SRT)** synchronized with the narration.
+6. **Renders 1280x720 Viral Thumbnail** with 3D text overlay on the video's best keyframe.
+7. **Generates Complete SEO Package** (viral titles, descriptions with chapter timestamps for each clip, and 500-char tags).
+
+```mermaid
+flowchart TD
+    Clips["📹 4 Raw Video Footages\n(Clip 1, Clip 2, Clip 3, Clip 4)"] --> BatchUpload["Batch Ingestion / Local Paths"]
+    
+    subgraph Engine["⚡ Master Multi-Clip Compositor"]
+        direction TB
+        Probe["ffprobe Inspector\n(Calculate clip durations & chapter timestamps)"]
+        TTS["🎙️ Multi-Language TTS Engine\n(English, Telugu, Hindi, Tamil, Spanish, etc.)"]
+        BGM["🎵 Royalty-Free BGM & SFX Generator\n(Whoosh, Boom, Tension Risers)"]
+        Stitcher["🎬 FFmpeg Multi-Filter Compositor\n• Scale & Pad to 1280x720 30fps\n• Concat N Clips into 1 Master Video\n• Burn Intro Hook Title\n• Duck Original Audio to 25%\n• Mix Spoken Voiceover + BGM + SFX"]
+        ThumbGen["🎨 Thumbnail Keyframe Extractor\n• Capture High-Action Frame\n• Render 3D Bold Text Overlay\n• 1280x720 Viral PNG"]
+        SEO["🚀 SEO & Chapter Generator\n• 00:00 - Part 1\n• 03:37 - Part 2\n• 500-Char Studio Tags"]
+    end
+
+    BatchUpload --> Probe
+    Probe --> Stitcher
+    TTS --> Stitcher
+    BGM --> Stitcher
+    Stitcher --> ThumbGen
+    Probe --> SEO
+    
+    Stitcher --> FinalMP4["📺 Complete Stitched MP4 Video"]
+    ThumbGen --> FinalThumb["🖼️ Viral 1280x720 Thumbnail with Text"]
+    SEO --> FinalSEO["📋 Titles, Chapters & 500-Char Tags"]
+```
+
+---
+
 ## ⏱️ 1-Hour Long-Form Video Pipeline
 
-Specifically engineered to take **more than 1 hour of raw footage** (podcasts, streams, raw tutorials, multicam recordings) and edit it down into an exact **1-hour (3,600s)** YouTube video.
+Specifically engineered to take **more than 1 hour of raw footage** (podcasts, streams, raw tutorials, multicam recordings) or shorter clips, and edit it down into an exact **1-hour (3,600s)** YouTube video or exact clip duration.
 
 ```mermaid
 flowchart LR

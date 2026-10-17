@@ -9,7 +9,8 @@ import {
   DownloadCloud, 
   Globe, 
   Smartphone, 
-  MonitorPlay 
+  MonitorPlay,
+  Layers
 } from 'lucide-react';
 
 export default function Navbar({ 
@@ -22,11 +23,12 @@ export default function Navbar({
   onOpenExport 
 }) {
   const tabs = [
-    { id: 'autopilot', label: 'Auto-Pilot Mode', icon: Zap, highlight: true },
-    { id: 'video', label: 'Video & Hook Studio', icon: Video },
-    { id: 'policy', label: 'Policy & Copyright RAG', icon: ShieldCheck },
-    { id: 'thumbnail', label: 'Viral Thumbnail Canvas', icon: ImageIcon },
-    { id: 'seo', label: 'SEO & Metadata', icon: Rocket },
+    { id: 'producer', label: '🎬 4-Clip Auto-Stitcher', icon: Layers, highlight: true },
+    { id: 'autopilot', label: 'Auto-Pilot Mode', icon: Zap },
+    { id: 'video', label: 'Video Studio', icon: Video },
+    { id: 'policy', label: 'Policy RAG', icon: ShieldCheck },
+    { id: 'thumbnail', label: 'Thumbnail Canvas', icon: ImageIcon },
+    { id: 'seo', label: 'SEO & Tags', icon: Rocket },
   ];
 
   const languages = [

@@ -5,6 +5,7 @@ uploads/*
 !uploads/.gitkeep
 outputs/*.mp4
 outputs/thumbnails/*
+outputs/voiceovers/*
 !outputs/sfx/
 .env
 .DS_Store

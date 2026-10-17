@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Navbar from './components/Navbar';
+import MultiClipAutoProducer from './components/MultiClipAutoProducer';
 import AutopilotView from './components/AutopilotView';
 import VideoStudio from './components/VideoStudio';
 import PolicyGuardView from './components/PolicyGuardView';
@@ -8,7 +9,7 @@ import SEORocketView from './components/SEORocketView';
 import ExportModal from './components/ExportModal';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('autopilot');
+  const [activeTab, setActiveTab] = useState('producer');
   const [aspectRatio, setAspectRatio] = useState('16:9'); // '16:9' or '9:16'
   const [selectedLanguage, setSelectedLanguage] = useState('en'); // Multi-language state
   const [projectData, setProjectData] = useState(null);
@@ -29,6 +30,13 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
+        {activeTab === 'producer' && (
+          <MultiClipAutoProducer
+            selectedLanguage={selectedLanguage}
+            onPackageGenerated={(pkg) => setProjectData(pkg)}
+          />
+        )}
+
         {activeTab === 'autopilot' && (
           <AutopilotView
             aspectRatio={aspectRatio}

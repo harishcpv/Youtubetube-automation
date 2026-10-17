@@ -108,6 +108,27 @@ class SoundService {
       });
       fs.writeFileSync(riserPath, riserWav);
     }
+
+    // 6. Ambient Background Music Loop (Gentle Lofi Chords)
+    const bgmPath = path.join(this.sfxDir, 'bgm.wav');
+    if (!fs.existsSync(bgmPath)) {
+      const bgmWav = this.createWavBuffer(sampleRate, 8.0, (t) => {
+        // Soft chord progression: Cmaj7 - Am7 (warm sine pads)
+        const chord1 = (t % 8.0 < 4.0);
+        const f1 = chord1 ? 261.63 : 220.00; // C4 or A3
+        const f2 = chord1 ? 329.63 : 261.63; // E4 or C4
+        const f3 = chord1 ? 392.00 : 329.63; // G4 or E4
+        const f4 = chord1 ? 493.88 : 392.00; // B4 or G4
+        const pad = (Math.sin(2 * Math.PI * f1 * t) +
+                     Math.sin(2 * Math.PI * f2 * t) * 0.7 +
+                     Math.sin(2 * Math.PI * f3 * t) * 0.6 +
+                     Math.sin(2 * Math.PI * f4 * t) * 0.4) * 0.25;
+        // Subtle rhythmic pulse
+        const pulse = 0.85 + 0.15 * Math.sin(2 * Math.PI * 2 * t);
+        return pad * pulse;
+      });
+      fs.writeFileSync(bgmPath, bgmWav);
+    }
   }
 
   getAvailableSFX() {

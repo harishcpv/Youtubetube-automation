@@ -30,12 +30,14 @@ const policyRoutes = require('./routes/policy');
 const thumbnailRoutes = require('./routes/thumbnail');
 const seoRoutes = require('./routes/seo');
 const autopilotRoutes = require('./routes/autopilot');
+const producerRoutes = require('./routes/producer');
 
 app.use('/api/video', videoRoutes);
 app.use('/api/policy', policyRoutes);
 app.use('/api/thumbnail', thumbnailRoutes);
 app.use('/api/seo', seoRoutes);
 app.use('/api/autopilot', autopilotRoutes);
+app.use('/api/producer', producerRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
