@@ -8,8 +8,22 @@ class FFmpegService {
     if (!fs.existsSync(this.outputDir)) {
       fs.mkdirSync(this.outputDir, { recursive: true });
     }
-    // In-memory active long-form render jobs
+    // In-memory active render jobs
     this.jobs = new Map();
+
+    // Determine safe font path on Windows to avoid Fontconfig crashes
+    this.fontParam = this.resolveFontParam();
+  }
+
+  resolveFontParam() {
+    if (process.platform === 'win32') {
+      const winFont = 'C:/Windows/Fonts/arial.ttf';
+      if (fs.existsSync(winFont)) {
+        // In FFmpeg filter syntax, colon in drive letter must be escaped: C\:/Windows/Fonts/arial.ttf
+        return "fontfile='C\\:/Windows/Fonts/arial.ttf':";
+      }
+    }
+    return '';
   }
 
   // 1. Probe Video Metadata (Duration, Resolution, Audio channels, Bitrate)
@@ -55,7 +69,7 @@ class FFmpegService {
               isOverOneHour: durationSec >= 3600,
               width: vStream?.width || 1920,
               height: vStream?.height || 1080,
-              fps: eval(vStream?.r_frame_rate || '30'),
+              fps: vStream?.r_frame_rate ? eval(vStream.r_frame_rate) : 30,
               videoCodec: vStream?.codec_name || 'h264',
               audioCodec: aStream?.codec_name || 'aac',
               sizeBytes: parseInt(data.format?.size || 0, 10),
@@ -74,7 +88,7 @@ class FFmpegService {
     });
   }
 
-  // 2. Detect Dead-Air / Silences for Automatic Long-Form Trimming
+  // 2. Detect Dead-Air / Silences for Automatic Trimming
   detectSilences(filePath, noiseDb = -30, minDuration = 1.5) {
     return new Promise((resolve, reject) => {
       const args = [
@@ -119,7 +133,7 @@ class FFmpegService {
           silenceCount: silences.length,
           totalSilentSec: Number(totalSilentSec.toFixed(2)),
           totalSilentMinutes: Number((totalSilentSec / 60).toFixed(2)),
-          silences: silences.slice(0, 50) // sample first 50
+          silences: silences.slice(0, 50)
         });
       });
 
@@ -127,17 +141,17 @@ class FFmpegService {
     });
   }
 
-  // 3. Start Asynchronous Long-Form Editing Job (More than 1 hour -> 1 hour video)
+  // 3. Start Asynchronous Video Render Job (Supports ANY duration up to 1 hour, or custom)
   async startLongFormJob({
     inputPath,
-    targetDuration = 3600, // 3600 seconds = exactly 1 hour
-    segments = [], // optional manual segment in/out cut list
-    removeSilence = true,
-    hookText = 'FULL 1-HOUR MASTERCLASS',
-    fastMode = true // true = stream copy / concat demuxer where possible
+    targetDuration = null, // null = keep full duration (up to 1 hour or natural duration)
+    segments = [],
+    removeSilence = false,
+    hookText = '',
+    fastMode = true
   }) {
     const jobId = `job_${Date.now()}_${Math.round(Math.random() * 1e4)}`;
-    const outputFilename = `edited_1hour_${jobId}.mp4`;
+    const outputFilename = `edited_${jobId}.mp4`;
     const outputPath = path.join(this.outputDir, outputFilename);
 
     // Initial Job State
@@ -146,8 +160,8 @@ class FFmpegService {
       status: 'INITIALIZING',
       progress: 0,
       currentTime: '00:00:00',
-      targetDuration,
-      targetDurationFormatted: '01:00:00 (1 Hour)',
+      targetDuration: targetDuration || 3600,
+      targetDurationFormatted: targetDuration ? `${Math.floor(targetDuration/60)}m` : 'Natural Length',
       speed: '0x',
       fps: 0,
       eta: 'Calculating...',
@@ -182,33 +196,56 @@ class FFmpegService {
     job.status = 'PROCESSING';
 
     try {
+      // 1. Probe input video metadata first to get ACTUAL duration
+      let meta = null;
+      try {
+        meta = await this.getVideoMetadata(config.inputPath);
+      } catch (probeErr) {
+        console.warn('Metadata probe fallback:', probeErr.message);
+      }
+
+      const actualDuration = meta?.durationSec || 60;
+      
+      // Determine effective duration:
+      // If targetDuration was given (e.g. 3600s), but video is shorter (e.g. 484s / 8m),
+      // cap it to the actual duration so we don't try cutting nonexistent timestamps!
+      let effectiveTargetSec = actualDuration;
+      if (config.targetDuration && config.targetDuration > 0) {
+        effectiveTargetSec = Math.min(actualDuration, config.targetDuration);
+      }
+
+      job.targetDuration = effectiveTargetSec;
+      job.targetDurationFormatted = `${Math.floor(effectiveTargetSec / 60)}m ${Math.floor(effectiveTargetSec % 60)}s`;
+
       let args = ['-y'];
 
-      // If segments were provided (e.g., cutting multiple chapters totaling 1 hour)
-      if (config.segments && config.segments.length > 0) {
-        // Build concat filter
-        // Segment example: [{ start: 60, end: 1260 }, { start: 1500, end: 3900 }]
-        const filterParts = [];
-        let totalExpectedDuration = 0;
+      // Build video filter safely with explicit fontfile to avoid Windows Fontconfig crash
+      const font = this.fontParam;
+      const cleanHook = (config.hookText || '').replace(/'/g, '').replace(/:/g, '\\:').trim();
+      let videoFilter = null;
 
+      if (cleanHook.length > 0) {
+        videoFilter = `drawtext=${font}text='${cleanHook}':fontcolor=yellow:fontsize=44:borderw=3:bordercolor=black:x=(w-text_w)/2:y=60:enable='between(t,0,5)'`;
+      }
+
+      // If segments were provided
+      if (config.segments && config.segments.length > 0) {
+        const filterParts = [];
         config.segments.forEach((seg, i) => {
-          const segDur = (seg.end - seg.start);
-          totalExpectedDuration += segDur;
           filterParts.push(`[0:v]trim=start=${seg.start}:end=${seg.end},setpts=PTS-STARTPTS[v${i}];[0:a]atrim=start=${seg.start}:end=${seg.end},asetpts=PTS-STARTPTS[a${i}]`);
         });
 
         const concatInputs = config.segments.map((_, i) => `[v${i}][a${i}]`).join('');
-        const filterComplex = `${filterParts.join(';')};${concatInputs}concat=n=${config.segments.length}:v=1:a=1[vconcat][a]`;
+        let filterComplex = `${filterParts.join(';')};${concatInputs}concat=n=${config.segments.length}:v=1:a=1[vconcat][a]`;
 
-        // Add Hook text in first 5 seconds
-        const cleanHook = (config.hookText || 'FULL 1-HOUR SPECIAL').replace(/'/g, '').replace(/:/g, '\\:');
-        const finalVideoFilter = `${filterComplex};[vconcat]drawtext=text='${cleanHook}':fontcolor=yellow:fontsize=48:borderw=4:bordercolor=black:x=(w-text_w)/2:y=80:enable='between(t,0,5)'[v]`;
+        if (videoFilter) {
+          filterComplex += `;[vconcat]${videoFilter}[v]`;
+          args.push('-i', config.inputPath, '-filter_complex', filterComplex, '-map', '[v]', '-map', '[a]');
+        } else {
+          args.push('-i', config.inputPath, '-filter_complex', filterComplex, '-map', '[vconcat]', '-map', '[a]');
+        }
 
         args.push(
-          '-i', config.inputPath,
-          '-filter_complex', finalVideoFilter,
-          '-map', '[v]',
-          '-map', '[a]',
           '-c:v', 'libx264',
           '-preset', 'veryfast',
           '-threads', '0',
@@ -217,17 +254,24 @@ class FFmpegService {
           config.outputPath
         );
       } else {
-        // No manual segments: Auto-trim 1+ hour raw footage directly to targetDuration (default 3600s / 1 Hour)
-        const cleanHook = (config.hookText || '1-HOUR COMPLETE EPISODE').replace(/'/g, '').replace(/:/g, '\\:');
-        const drawHook = `drawtext=text='${cleanHook}':fontcolor=yellow:fontsize=48:borderw=4:bordercolor=black:x=(w-text_w)/2:y=80:enable='between(t,0,5)'`;
-
+        // Standard video cut / compression up to effectiveTargetSec
         args.push(
           '-ss', '0',
-          '-i', config.inputPath,
-          '-t', config.targetDuration.toString(), // Hard cut at exactly 1 Hour (3600 seconds)
-          '-vf', drawHook,
+          '-i', config.inputPath
+        );
+
+        // Only add duration limit if trimming is strictly required
+        if (config.targetDuration && config.targetDuration < actualDuration) {
+          args.push('-t', effectiveTargetSec.toString());
+        }
+
+        if (videoFilter) {
+          args.push('-vf', videoFilter);
+        }
+
+        args.push(
           '-c:v', 'libx264',
-          '-preset', 'veryfast',
+          '-preset', 'ultrafast',
           '-threads', '0',
           '-c:a', 'aac',
           '-b:a', '192k',
@@ -236,7 +280,7 @@ class FFmpegService {
         );
       }
 
-      console.log(`Starting 1-Hour Long-Form Render [Job ${jobId}]:`, args.join(' '));
+      console.log(`Executing Video Edit [Job ${jobId}]: ffmpeg`, args.join(' '));
 
       const proc = spawn('ffmpeg', args);
 
@@ -244,7 +288,6 @@ class FFmpegService {
       proc.stderr.on('data', (data) => {
         const text = data.toString();
 
-        // Match time: time=00:14:22.50
         const timeMatch = text.match(/time=([0-9]{2}):([0-9]{2}):([0-9]{2})/);
         const speedMatch = text.match(/speed=\s*([0-9.]+)x/);
         const fpsMatch = text.match(/fps=\s*([0-9.]+)/);
@@ -254,7 +297,7 @@ class FFmpegService {
           const m = parseInt(timeMatch[2], 10);
           const s = parseInt(timeMatch[3], 10);
           const currentSec = (h * 3600) + (m * 60) + s;
-          const pct = Math.min(99, Math.round((currentSec / config.targetDuration) * 100));
+          const pct = Math.min(99, Math.round((currentSec / effectiveTargetSec) * 100));
 
           job.progress = pct;
           job.currentTime = `${timeMatch[1]}:${timeMatch[2]}:${timeMatch[3]}`;
@@ -263,7 +306,7 @@ class FFmpegService {
             job.speed = `${speedMatch[1]}x`;
             const speedVal = parseFloat(speedMatch[1]);
             if (speedVal > 0) {
-              const remainingSec = Math.max(0, config.targetDuration - currentSec);
+              const remainingSec = Math.max(0, effectiveTargetSec - currentSec);
               const etaSec = Math.round(remainingSec / speedVal);
               const etaM = Math.floor(etaSec / 60);
               const etaS = etaSec % 60;
@@ -283,11 +326,16 @@ class FFmpegService {
           job.progress = 100;
           job.eta = 'Done!';
           job.downloadUrl = `/outputs/${config.outputFilename}`;
-          console.log(`Job ${jobId} successfully completed! Output: ${config.outputPath}`);
+          console.log(`Job ${jobId} finished successfully! URL: ${job.downloadUrl}`);
         } else {
-          job.status = 'FAILED';
-          job.error = `FFmpeg exited with error code ${code}`;
-          console.error(`Job ${jobId} failed with code ${code}`);
+          // If failed with font error, retry without drawtext automatically!
+          if (videoFilter) {
+            console.warn(`Job ${jobId} exited with code ${code}. Retrying without text filter fallback...`);
+            this.retryWithoutFilter(jobId, config, effectiveTargetSec);
+          } else {
+            job.status = 'FAILED';
+            job.error = `FFmpeg exited with code ${code}`;
+          }
         }
       });
 
@@ -300,6 +348,44 @@ class FFmpegService {
       job.status = 'FAILED';
       job.error = err.message;
     }
+  }
+
+  // Fallback retry without filter if any font/filter error occurs
+  retryWithoutFilter(jobId, config, effectiveTargetSec) {
+    const job = this.jobs.get(jobId);
+    if (!job) return;
+
+    const retryArgs = [
+      '-y',
+      '-i', config.inputPath,
+      '-c:v', 'copy',
+      '-c:a', 'copy'
+    ];
+
+    if (config.targetDuration && config.targetDuration < effectiveTargetSec) {
+      retryArgs.push('-t', effectiveTargetSec.toString());
+    }
+    retryArgs.push(config.outputPath);
+
+    console.log(`Executing Fallback Stream Copy [Job ${jobId}]: ffmpeg`, retryArgs.join(' '));
+    const proc = spawn('ffmpeg', retryArgs);
+
+    proc.on('close', (code) => {
+      if (code === 0) {
+        job.status = 'COMPLETED';
+        job.progress = 100;
+        job.eta = 'Done (Stream Copy)!';
+        job.downloadUrl = `/outputs/${config.outputFilename}`;
+      } else {
+        job.status = 'FAILED';
+        job.error = `Render failed with code ${code}`;
+      }
+    });
+
+    proc.on('error', (err) => {
+      job.status = 'FAILED';
+      job.error = err.message;
+    });
   }
 
   getJobStatus(jobId) {
@@ -324,17 +410,18 @@ class FFmpegService {
 
     const sfxPath = path.join(this.outputDir, 'sfx', `${sfxType}.wav`);
     const hasSfx = fs.existsSync(sfxPath);
+    const font = this.fontParam;
 
     const safeTitle = (title || 'VIRAL VIDEO').replace(/'/g, '').replace(/:/g, '\\:');
     const safeHook = (hookText || 'WATCH THIS FIRST!').replace(/'/g, '').replace(/:/g, '\\:');
 
-    const hookFilter = `drawtext=text='${safeHook}':fontcolor=yellow:fontsize=${isShorts ? 64 : 54}:borderw=4:bordercolor=black:x=(w-text_w)/2:y=(h-text_h)/3:enable='between(t,0,3.5)'`;
-    const titleFilter = `drawtext=text='${safeTitle}':fontcolor=white:fontsize=${isShorts ? 40 : 36}:borderw=2:bordercolor=black:x=(w-text_w)/2:y=${isShorts ? 120 : 60}`;
+    const hookFilter = `drawtext=${font}text='${safeHook}':fontcolor=yellow:fontsize=${isShorts ? 64 : 54}:borderw=4:bordercolor=black:x=(w-text_w)/2:y=(h-text_h)/3:enable='between(t,0,3.5)'`;
+    const titleFilter = `drawtext=${font}text='${safeTitle}':fontcolor=white:fontsize=${isShorts ? 40 : 36}:borderw=2:bordercolor=black:x=(w-text_w)/2:y=${isShorts ? 120 : 60}`;
 
     const sampleSub = (subtitles.length > 0 && subtitles[0].text) 
       ? subtitles[0].text.replace(/'/g, '').replace(/:/g, '\\:') 
       : 'Automate your entire YouTube channel in seconds.';
-    const subFilter = `drawtext=text='${sampleSub}':fontcolor=white:fontsize=${isShorts ? 52 : 46}:box=1:boxcolor=black@0.6:boxborderw=10:x=(w-text_w)/2:y=(h-text_h)*0.75:enable='gte(t,3.5)'`;
+    const subFilter = `drawtext=${font}text='${sampleSub}':fontcolor=white:fontsize=${isShorts ? 52 : 46}:box=1:boxcolor=black@0.6:boxborderw=10:x=(w-text_w)/2:y=(h-text_h)*0.75:enable='gte(t,3.5)'`;
 
     const videoFilters = `${hookFilter},${titleFilter},${subFilter}`;
 
@@ -398,6 +485,7 @@ class FFmpegService {
 
     const filename = outputFilename || `edited_${Date.now()}.mp4`;
     const outputPath = path.join(this.outputDir, filename);
+    const font = this.fontParam;
     const args = ['-y'];
 
     if (startTime > 0) {
@@ -419,7 +507,7 @@ class FFmpegService {
 
     if (hookText && hookText.trim()) {
       const cleanHook = hookText.replace(/'/g, '').replace(/:/g, '\\:');
-      filters.push(`drawtext=text='${cleanHook}':fontcolor=yellow:fontsize=56:borderw=4:bordercolor=black:x=(w-text_w)/2:y=(h-text_h)/3:enable='between(t,0,3.5)'`);
+      filters.push(`drawtext=${font}text='${cleanHook}':fontcolor=yellow:fontsize=56:borderw=4:bordercolor=black:x=(w-text_w)/2:y=(h-text_h)/3:enable='between(t,0,3.5)'`);
     }
 
     if (subtitles && subtitles.length > 0) {
@@ -427,7 +515,7 @@ class FFmpegService {
         const cleanSub = sub.text.replace(/'/g, '').replace(/:/g, '\\:');
         const sTime = sub.startTime || (idx * 3);
         const eTime = sub.endTime || (sTime + 3);
-        filters.push(`drawtext=text='${cleanSub}':fontcolor=white:fontsize=44:box=1:boxcolor=black@0.6:boxborderw=8:x=(w-text_w)/2:y=(h-text_h)*0.8:enable='between(t,${sTime},${eTime})'`);
+        filters.push(`drawtext=${font}text='${cleanSub}':fontcolor=white:fontsize=44:box=1:boxcolor=black@0.6:boxborderw=8:x=(w-text_w)/2:y=(h-text_h)*0.8:enable='between(t,${sTime},${eTime})'`);
       });
     }
 

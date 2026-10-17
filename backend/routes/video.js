@@ -70,16 +70,16 @@ router.post('/detect-silence', async (req, res) => {
   }
 });
 
-// 3. Start Long-Form 1-Hour Render Job
+// 3. Start Video Render Job (Any Duration Up to 1 Hour)
 router.post('/longform/start', async (req, res) => {
   try {
     const {
       uploadedFilename,
       localFilePath,
-      targetDuration = 3600, // 3600 seconds = 1 hour
+      targetDuration = null,
       segments = [],
-      removeSilence = true,
-      hookText = 'FULL 1-HOUR MASTERCLASS',
+      removeSilence = false,
+      hookText = '',
       fastMode = true
     } = req.body;
 
@@ -94,9 +94,14 @@ router.post('/longform/start', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Video source file not found' });
     }
 
+    let parsedDuration = null;
+    if (targetDuration && targetDuration !== 'natural' && Number(targetDuration) > 0) {
+      parsedDuration = Number(targetDuration);
+    }
+
     const job = await ffmpegService.startLongFormJob({
       inputPath: targetPath,
-      targetDuration: Number(targetDuration),
+      targetDuration: parsedDuration,
       segments,
       removeSilence,
       hookText,

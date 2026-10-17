@@ -22,8 +22,8 @@ import {
 } from 'lucide-react';
 
 export default function VideoStudio({ aspectRatio, projectData, setProjectData }) {
-  // Mode: 'short' or 'longform'
-  const [editingMode, setEditingMode] = useState('longform'); // default to long-form 1-hour studio
+  // Mode: 'smart' (any duration up to 1 hour) or 'short' (procedural / quick highlights)
+  const [editingMode, setEditingMode] = useState('smart');
 
   // Media Source States
   const [videoFile, setVideoFile] = useState(null);
@@ -39,26 +39,22 @@ export default function VideoStudio({ aspectRatio, projectData, setProjectData }
   // Silence Detection States
   const [silenceData, setSilenceData] = useState(null);
   const [isDetectingSilence, setIsDetectingSilence] = useState(false);
-  const [autoRemoveSilence, setAutoRemoveSilence] = useState(true);
+  const [autoRemoveSilence, setAutoRemoveSilence] = useState(false);
 
-  // Long-Form 1-Hour Configuration
-  const [targetDurationMin, setTargetDurationMin] = useState(60); // 60 minutes = 1 hour
-  const [hookText, setHookText] = useState('FULL 1-HOUR COMPLETE BREAKDOWN');
-  const [segments, setSegments] = useState([
-    { id: 1, title: 'Introduction & Context', start: 0, end: 900 },
-    { id: 2, title: 'Deep-Dive Execution', start: 900, end: 2400 },
-    { id: 3, title: 'Case Study & Analysis', start: 2400, end: 3600 },
-  ]);
+  // Duration Options: 'full' (keep full video length up to 1 hr) or number in minutes
+  const [durationMode, setDurationMode] = useState('full');
+  const [customMinutes, setCustomMinutes] = useState(60);
+
+  // Hook Text Overlay
+  const [enableHookOverlay, setEnableHookOverlay] = useState(false);
+  const [hookText, setHookText] = useState('WATCH THIS FIRST!');
 
   // Long-Form Job Tracker
   const [activeJobId, setActiveJobId] = useState(null);
   const [jobStatus, setJobStatus] = useState(null);
   const [isJobRunning, setIsJobRunning] = useState(false);
 
-  // Standard Short-Form / SFX states
-  const [topic, setTopic] = useState('How AI will change coding forever');
-  const [script, setScript] = useState('Welcome to the complete breakdown! In this video we cover everything you need.');
-  const [subtitles, setSubtitles] = useState([]);
+  // SFX states
   const [sfxList, setSfxList] = useState([]);
   const [selectedSfx, setSelectedSfx] = useState('boom');
   const [playingSfx, setPlayingSfx] = useState(null);
@@ -73,7 +69,7 @@ export default function VideoStudio({ aspectRatio, projectData, setProjectData }
       .catch((err) => console.error('Error fetching SFX:', err));
   }, []);
 
-  // Poll Long-Form Job Status
+  // Poll Render Job Status
   useEffect(() => {
     if (!activeJobId || !isJobRunning) return;
 
@@ -90,7 +86,7 @@ export default function VideoStudio({ aspectRatio, projectData, setProjectData }
       } catch (err) {
         console.error('Job polling error:', err);
       }
-    }, 1500);
+    }, 1200);
 
     return () => clearInterval(interval);
   }, [activeJobId, isJobRunning]);
@@ -110,6 +106,11 @@ export default function VideoStudio({ aspectRatio, projectData, setProjectData }
       const data = await res.json();
       if (data.success && data.metadata) {
         setVideoMeta(data.metadata);
+        if (data.metadata.durationSec < 3600) {
+          setDurationMode('full');
+        }
+      } else {
+        alert(data.error || 'Could not analyze video file.');
       }
     } catch (err) {
       console.error('Error inspecting video:', err);
@@ -172,13 +173,22 @@ export default function VideoStudio({ aspectRatio, projectData, setProjectData }
     }
   };
 
-  // Start 1-Hour Long-Form Render Job
-  const handleStart1HourJob = async () => {
+  // Start Video Render Job (Any Duration up to 1 Hour)
+  const handleStartRenderJob = async () => {
     setIsJobRunning(true);
-    setJobStatus({ status: 'STARTING', progress: 0, currentTime: '00:00:00', eta: 'Starting FFmpeg...' });
+    setJobStatus({ status: 'PROCESSING', progress: 0, currentTime: '00:00:00', eta: 'Initializing FFmpeg...' });
 
     try {
-      const targetSec = targetDurationMin * 60; // 60 min = 3600 sec
+      let targetSec = null;
+      if (durationMode === 'custom') {
+        targetSec = customMinutes * 60;
+      } else if (durationMode === 'hour') {
+        targetSec = 3600;
+      } else {
+        // 'full': keep natural duration
+        targetSec = videoMeta ? videoMeta.durationSec : null;
+      }
+
       const res = await fetch('/api/video/longform/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -186,7 +196,7 @@ export default function VideoStudio({ aspectRatio, projectData, setProjectData }
           uploadedFilename: uploadedFilename || null,
           localFilePath: localFilePath || null,
           targetDuration: targetSec,
-          hookText,
+          hookText: enableHookOverlay ? hookText : '',
           removeSilence: autoRemoveSilence,
           fastMode: true
         })
@@ -197,7 +207,7 @@ export default function VideoStudio({ aspectRatio, projectData, setProjectData }
         setActiveJobId(data.jobId);
       } else {
         setIsJobRunning(false);
-        alert(data.error || 'Failed to start long-form render job.');
+        alert(data.error || 'Failed to start video render job.');
       }
     } catch (err) {
       console.error('Start job error:', err);
@@ -215,35 +225,35 @@ export default function VideoStudio({ aspectRatio, projectData, setProjectData }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      {/* Studio Header & Mode Switcher */}
+      {/* Studio Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-slate-900 border border-slate-800">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
               <Video className="w-5 h-5 text-indigo-400" />
-              Video Production & Long-Form Studio
+              Smart Video Editor & Processing Studio
             </h2>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-red-500/10 text-red-400 border border-red-500/30">
-              1+ Hour → 1 Hour Engine
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+              Any Duration Up to 1 Hour
             </span>
           </div>
           <p className="text-xs text-slate-400">
-            Engineered to process massive raw footage (1 to 4+ hours) and edit it down into a polished 1-hour YouTube video.
+            Edit, trim, and polish raw video of any duration (from 2 minutes, 8 minutes, 25 minutes, up to 1+ hour raw footage) into a ready-to-publish video.
           </p>
         </div>
 
         {/* Mode Toggle */}
         <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
           <button
-            onClick={() => setEditingMode('longform')}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold transition ${
-              editingMode === 'longform'
+            onClick={() => setEditingMode('smart')}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg font-bold transition ${
+              editingMode === 'smart'
                 ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            1-Hour Long-Form Mode
+            Full Video Editor (Up to 1 Hour)
           </button>
           <button
             onClick={() => setEditingMode('short')}
@@ -254,37 +264,37 @@ export default function VideoStudio({ aspectRatio, projectData, setProjectData }
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
-            Highlights & Intro Clips
+            Quick Procedural Generator
           </button>
         </div>
       </div>
 
-      {editingMode === 'longform' ? (
-        /* ================= 1-HOUR LONG-FORM STUDIO ================= */
+      {editingMode === 'smart' ? (
+        /* ================= SMART FULL VIDEO EDITOR ================= */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column: Raw Footage Ingestion & Analysis (7 cols) */}
+          {/* Left Column: Video Ingestion & Controls (7 cols) */}
           <div className="lg:col-span-7 space-y-6">
-            {/* Input Selection: Local Path OR Upload */}
+            {/* Input Selection */}
             <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <FolderOpen className="w-4 h-4 text-indigo-400" />
-                1. Raw Footage Source (1+ Hour File)
+                1. Select Raw Video Source
               </h3>
               <p className="text-xs text-slate-400">
-                For massive files (2GB - 20GB+), you can paste the <b>local file path</b> directly from your computer to bypass slow browser uploads, or drop the file below.
+                Works with any video format. Paste a local file path (instant for large files) or upload directly.
               </p>
 
-              {/* Direct Local File Path Input */}
+              {/* Direct Local Path */}
               <div className="space-y-1.5">
                 <label className="block text-[11px] font-semibold text-slate-300">
-                  Option A: Paste Direct Local File Path (Instant for 10GB+ Raw Files):
+                  Option A: Paste Local File Path (Instant for Large Files):
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={localFilePath}
                     onChange={(e) => setLocalFilePath(e.target.value)}
-                    placeholder="e.g. C:\Users\Haris\Videos\Raw_Podcast_Episode_1h25m.mp4"
+                    placeholder="e.g. C:\Users\Haris\Videos\my_recording.mp4"
                     className="flex-1 bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none font-mono"
                   />
                   <button
@@ -297,10 +307,10 @@ export default function VideoStudio({ aspectRatio, projectData, setProjectData }
                 </div>
               </div>
 
-              {/* Or Browser File Upload */}
+              {/* Browser Upload */}
               <div className="space-y-1.5 pt-2 border-t border-slate-800/80">
                 <label className="block text-[11px] font-semibold text-slate-300">
-                  Option B: Or Upload from Browser:
+                  Option B: Or Drop / Upload from Browser:
                 </label>
                 <label className="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition bg-slate-950/40">
                   <input
@@ -316,25 +326,23 @@ export default function VideoStudio({ aspectRatio, projectData, setProjectData }
                 </label>
               </div>
 
-              {/* Video Inspection Metadata Card */}
+              {/* Inspected Video Details */}
               {videoMeta && (
-                <div className="p-4 rounded-xl bg-slate-950 border border-indigo-500/30 text-xs space-y-2.5">
+                <div className="p-4 rounded-xl bg-slate-950 border border-emerald-500/30 text-xs space-y-2.5 animate-in fade-in">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-white flex items-center gap-1.5">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                      Raw Footage Verified: {videoMeta.filename}
+                      Video Ready: {videoMeta.filename}
                     </span>
-                    <span className={`px-2 py-0.5 rounded font-bold text-[10px] ${
-                      videoMeta.isOverOneHour ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'
-                    }`}>
-                      {videoMeta.durationFormatted} ({videoMeta.durationSec}s)
+                    <span className="px-2.5 py-0.5 rounded-full font-bold text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      Duration: {videoMeta.durationFormatted} ({videoMeta.durationSec}s)
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-slate-300">
                     <div className="p-2 rounded bg-slate-900">
-                      <span className="text-slate-500 block text-[10px]">Total Size</span>
-                      <span className="font-bold">{videoMeta.sizeGB > 0 ? `${videoMeta.sizeGB} GB` : `${videoMeta.sizeMB} MB`}</span>
+                      <span className="text-slate-500 block text-[10px]">File Size</span>
+                      <span className="font-bold">{videoMeta.sizeMB} MB</span>
                     </div>
                     <div className="p-2 rounded bg-slate-900">
                       <span className="text-slate-500 block text-[10px]">Resolution</span>
@@ -345,7 +353,7 @@ export default function VideoStudio({ aspectRatio, projectData, setProjectData }
                       <span className="font-bold">{Math.round(videoMeta.fps)} FPS</span>
                     </div>
                     <div className="p-2 rounded bg-slate-900">
-                      <span className="text-slate-500 block text-[10px]">Video Codec</span>
+                      <span className="text-slate-500 block text-[10px]">Codec</span>
                       <span className="font-bold uppercase">{videoMeta.videoCodec}</span>
                     </div>
                   </div>
@@ -353,125 +361,160 @@ export default function VideoStudio({ aspectRatio, projectData, setProjectData }
               )}
             </div>
 
-            {/* Target Duration & Dead-Air Removal */}
+            {/* Target Duration Settings */}
             <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Scissors className="w-4 h-4 text-red-400" />
-                2. Target 1-Hour Compression & Silence Removal
+                2. Output Duration Settings (Up to 1 Hour)
               </h3>
 
-              {/* Target Duration Selector */}
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">
-                  Target Final Video Duration:
+              <div className="space-y-2.5">
+                <label className="block text-[11px] font-semibold text-slate-400">
+                  Select Desired Output Length:
                 </label>
-                <div className="flex gap-2">
-                  {[
-                    { min: 60, label: '🎯 Exactly 60:00 (1 Hour)' },
-                    { min: 45, label: '⏱️ 45:00 Minutes' },
-                    { min: 90, label: '🎬 90:00 (1.5 Hours)' }
-                  ].map((d) => (
-                    <button
-                      key={d.min}
-                      onClick={() => setTargetDurationMin(d.min)}
-                      className={`px-3 py-2 rounded-xl text-xs font-bold border transition ${
-                        targetDurationMin === d.min
-                          ? 'bg-red-600 border-red-500 text-white shadow-md shadow-red-500/20'
-                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      {d.label}
-                    </button>
-                  ))}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <button
+                    onClick={() => setDurationMode('full')}
+                    className={`p-3 rounded-xl text-xs font-bold border text-left transition ${
+                      durationMode === 'full'
+                        ? 'bg-emerald-950/40 border-emerald-500 text-white shadow-sm'
+                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span className="block text-emerald-400">✓ Full Video</span>
+                    <span className="text-[10px] text-slate-400 font-normal">
+                      {videoMeta ? `Keep full ${videoMeta.durationFormatted}` : 'Keep natural duration'}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setDurationMode('hour')}
+                    className={`p-3 rounded-xl text-xs font-bold border text-left transition ${
+                      durationMode === 'hour'
+                        ? 'bg-red-950/40 border-red-500 text-white shadow-sm'
+                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span className="block text-red-400">🎯 Exactly 1 Hour</span>
+                    <span className="text-[10px] text-slate-400 font-normal">Cut/Compress to 60:00</span>
+                  </button>
+
+                  <button
+                    onClick={() => setDurationMode('custom')}
+                    className={`p-3 rounded-xl text-xs font-bold border text-left transition ${
+                      durationMode === 'custom'
+                        ? 'bg-indigo-950/40 border-indigo-500 text-white shadow-sm'
+                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span className="block text-indigo-400">⏱️ Custom Trimming</span>
+                    <span className="text-[10px] text-slate-400 font-normal">{customMinutes} Minutes</span>
+                  </button>
                 </div>
+
+                {durationMode === 'custom' && (
+                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1 pt-3">
+                    <div className="flex justify-between text-xs text-slate-300">
+                      <span>Trim to Duration:</span>
+                      <span className="font-bold text-indigo-400">{customMinutes} Minutes</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="60"
+                      value={customMinutes}
+                      onChange={(e) => setCustomMinutes(Number(e.target.value))}
+                      className="w-full accent-indigo-500"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Optional Hook Overlay Checkbox */}
+              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={enableHookOverlay}
+                    onChange={(e) => setEnableHookOverlay(e.target.checked)}
+                    className="rounded accent-red-500"
+                  />
+                  <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Flame className="w-3.5 h-3.5 text-red-400" />
+                    Add Intro Hook Banner (First 5 seconds)
+                  </span>
+                </label>
+
+                {enableHookOverlay && (
+                  <input
+                    type="text"
+                    value={hookText}
+                    onChange={(e) => setHookText(e.target.value)}
+                    placeholder="Enter intro hook text..."
+                    className="w-full mt-2 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 font-semibold"
+                  />
+                )}
               </div>
 
               {/* Dead Air Scanning */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="text-xs font-bold text-white">Smart Dead-Air & Silence Removal</h4>
-                    <p className="text-[11px] text-slate-400">
-                      Scans raw footage to cut pauses longer than 1.5 seconds, saving time and keeping pace fast.
-                    </p>
+                    <h4 className="text-xs font-bold text-white">Silence & Dead-Air Detection</h4>
+                    <p className="text-[10px] text-slate-400">Find pauses longer than 1.5s to speed up pace.</p>
                   </div>
                   <button
                     onClick={handleDetectSilence}
                     disabled={isDetectingSilence || (!uploadedFilename && !localFilePath)}
-                    className="px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs font-semibold transition disabled:opacity-40"
+                    className="px-3 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs font-semibold transition disabled:opacity-40"
                   >
                     {isDetectingSilence ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Scan Silences'}
                   </button>
                 </div>
 
                 {silenceData && (
-                  <div className="p-3 rounded-lg bg-indigo-950/30 border border-indigo-500/20 text-xs flex items-center justify-between">
+                  <div className="p-2.5 rounded-lg bg-indigo-950/30 border border-indigo-500/20 text-xs flex items-center justify-between">
                     <div>
-                      <p className="font-bold text-white">{silenceData.silenceCount} Silent Pauses Found</p>
-                      <p className="text-[11px] text-indigo-300">
-                        Total Dead Air: {silenceData.totalSilentMinutes} minutes ({silenceData.totalSilentSec}s)
-                      </p>
+                      <p className="font-bold text-white">{silenceData.silenceCount} Pauses Found</p>
+                      <p className="text-[10px] text-indigo-300">Total Dead Air: {silenceData.totalSilentMinutes}m ({silenceData.totalSilentSec}s)</p>
                     </div>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={autoRemoveSilence}
-                        onChange={(e) => setAutoRemoveSilence(e.target.checked)}
-                        className="rounded accent-indigo-500"
-                      />
-                      <span className="text-xs font-semibold text-white">Auto-Trim Dead Air</span>
-                    </label>
                   </div>
                 )}
-              </div>
-
-              {/* Intro Hook Banner */}
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-400 mb-1">
-                  Intro Hook Banner (First 5s of the 1-Hour Video):
-                </label>
-                <input
-                  type="text"
-                  value={hookText}
-                  onChange={(e) => setHookText(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 focus:border-red-500 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold focus:outline-none"
-                />
               </div>
             </div>
           </div>
 
           {/* Right Column: Execution Monitor & Progress (5 cols) */}
           <div className="lg:col-span-5 space-y-6">
-            {/* Render Action Card */}
             <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
                   <Play className="w-4 h-4 text-red-500 fill-red-500" />
-                  Execute 1-Hour Render Pipeline
+                  Render & Polish Video
                 </h3>
                 <span className="text-xs font-bold text-emerald-400 font-mono">
-                  Target: {targetDurationMin}:00
+                  {durationMode === 'full' ? 'Full Video' : durationMode === 'hour' ? '60:00' : `${customMinutes}:00`}
                 </span>
               </div>
 
               <p className="text-xs text-slate-400">
-                Uses FFmpeg multi-threaded stream processing (`-threads 0 -preset veryfast`) to compile 1+ hour raw footage into a tightly edited 1-hour video with zero timeouts.
+                Multi-threaded FFmpeg engine with Windows font compatibility and automated fallback. Processes any video up to 1 hour with zero crashes.
               </p>
 
               <button
-                onClick={handleStart1HourJob}
+                onClick={handleStartRenderJob}
                 disabled={isJobRunning || (!uploadedFilename && !localFilePath)}
                 className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-indigo-600 hover:from-red-500 hover:to-indigo-500 text-white font-extrabold text-xs shadow-xl shadow-red-500/20 transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isJobRunning ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Rendering 1-Hour Video ({jobStatus?.progress || 0}%)...
+                    Rendering ({jobStatus?.progress || 0}%)...
                   </>
                 ) : (
                   <>
                     <Scissors className="w-4 h-4" />
-                    Start 1-Hour Long-Form Render
+                    Start Video Render
                   </>
                 )}
               </button>
@@ -511,7 +554,7 @@ export default function VideoStudio({ aspectRatio, projectData, setProjectData }
                     </div>
                   </div>
 
-                  {/* Download Button when completed */}
+                  {/* Completed Download Link */}
                   {jobStatus.downloadUrl && (
                     <a
                       href={jobStatus.downloadUrl}
@@ -519,59 +562,32 @@ export default function VideoStudio({ aspectRatio, projectData, setProjectData }
                       className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-lg shadow-emerald-500/20"
                     >
                       <Download className="w-4 h-4" />
-                      Download 1-Hour Video (MP4)
+                      Download Rendered MP4
                     </a>
+                  )}
+
+                  {jobStatus.error && (
+                    <div className="p-2.5 rounded bg-red-950/40 border border-red-500/30 text-red-300 text-[11px]">
+                      Error: {jobStatus.error}
+                    </div>
                   )}
                 </div>
               )}
             </div>
 
-            {/* Architecture Tip */}
-            <div className="p-4 rounded-xl bg-indigo-950/20 border border-indigo-500/20 text-xs space-y-1.5">
-              <span className="font-bold text-indigo-400 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" />
-                Hardware Acceleration & Stream Copy
-              </span>
-              <p className="text-slate-400 text-[11px] leading-relaxed">
-                FFmpeg uses stream copy and multi-threaded encoding (`-threads 0`). For 1+ hour raw files, it slices chapters and dead air, stitching the output directly into a YouTube-compliant 1-hour MP4.
-              </p>
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* ================= SHORT-FORM / HIGHLIGHT STUDIO ================= */
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-7 space-y-6">
-            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Upload className="w-4 h-4 text-indigo-400" />
-                Raw Footage or Procedural Synth
-              </h3>
-              <p className="text-xs text-slate-400">
-                Upload short raw clips or generate procedural motion graphics for quick testing.
-              </p>
-              <label className="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition bg-slate-950/40">
-                <input type="file" accept="video/*" onChange={handleFileUpload} className="hidden" />
-                <Upload className="w-5 h-5 text-slate-400 mb-1" />
-                <span className="text-xs text-slate-300 font-medium">
-                  {uploadedFilename ? `Selected: ${uploadedFilename}` : 'Drop clip here'}
-                </span>
-              </label>
-            </div>
-          </div>
-          <div className="lg:col-span-5 space-y-6">
-            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            {/* SFX Quick Test */}
+            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+              <h4 className="text-xs font-bold text-white flex items-center gap-2">
                 <Music className="w-4 h-4 text-emerald-400" />
                 Audition Sound Effects
-              </h3>
-              <div className="space-y-2">
-                {sfxList.slice(0, 4).map((sfx) => (
-                  <div key={sfx.id} className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950 text-xs">
-                    <span className="text-white font-medium">{sfx.name}</span>
+              </h4>
+              <div className="space-y-1.5">
+                {sfxList.slice(0, 3).map((sfx) => (
+                  <div key={sfx.id} className="flex items-center justify-between p-2 rounded-lg bg-slate-950 text-xs">
+                    <span className="text-slate-300">{sfx.name}</span>
                     <button
                       onClick={() => playSfx(sfx.id)}
-                      className="px-2 py-1 rounded bg-slate-800 text-slate-300 hover:bg-slate-700"
+                      className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px]"
                     >
                       ▶ Play
                     </button>
@@ -580,6 +596,14 @@ export default function VideoStudio({ aspectRatio, projectData, setProjectData }
               </div>
             </div>
           </div>
+        </div>
+      ) : (
+        /* ================= QUICK PROCEDURAL MODE ================= */
+        <div className="p-8 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-4">
+          <p className="text-sm font-semibold text-slate-200">Procedural Motion Generator</p>
+          <p className="text-xs text-slate-400 max-w-md mx-auto">
+            Use the Auto-Pilot tab or Full Video Editor tab to import and edit your video clips.
+          </p>
         </div>
       )}
     </div>
