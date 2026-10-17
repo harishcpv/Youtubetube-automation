@@ -278,8 +278,13 @@ class AutoProducerService {
         concatInputs.push(`[v${i}][${i}:a]`);
       });
 
-      // Concat all clips
-      filterParts.push(`${concatInputs.join('')}concat=n=${clipPaths.length}:v=1:a=1[v_raw][a_raw]`);
+      // Concat all clips (or pass single clip through)
+      if (clipPaths.length > 1) {
+        filterParts.push(`${concatInputs.join('')}concat=n=${clipPaths.length}:v=1:a=1[v_raw][a_raw]`);
+      } else {
+        filterParts.push(`[v0]null[v_raw]`);
+        filterParts.push(`[0:a]anull[a_raw]`);
+      }
 
       // Hook Text Filter (Safe with Windows font)
       const font = this.fontParam;

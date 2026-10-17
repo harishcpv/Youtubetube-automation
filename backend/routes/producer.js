@@ -19,8 +19,8 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// 1. Upload multiple clips at once (e.g. 4 raw video takes)
-router.post('/upload-batch', upload.array('clips', 15), (req, res) => {
+// 1. Upload multiple clips at once (any number of raw video takes, up to 100)
+router.post('/upload-batch', upload.array('clips', 100), (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ success: false, error: 'No video files uploaded.' });
@@ -74,7 +74,7 @@ router.post('/start', async (req, res) => {
     if (allPaths.length === 0) {
       return res.status(400).json({
         success: false,
-        error: 'No valid video clip paths found. Please upload at least 2 to 4 clips.'
+        error: 'No valid video clip paths found. Please upload or provide at least 1 or more clips.'
       });
     }
 

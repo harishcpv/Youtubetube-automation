@@ -17,8 +17,10 @@ import {
   ShieldCheck, 
   Copy, 
   Check,
-  ArrowRight,
-  Plus
+  Plus,
+  ChevronUp,
+  ChevronDown,
+  RotateCcw
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -119,10 +121,39 @@ export default function MultiClipAutoProducer({ selectedLanguage = 'en', onPacka
     setClips(clips.filter((c) => c.id !== id));
   };
 
+  // Move clip up in sequence order
+  const moveClipUp = (index) => {
+    if (index === 0) return;
+    setClips((prev) => {
+      const next = [...prev];
+      const temp = next[index - 1];
+      next[index - 1] = next[index];
+      next[index] = temp;
+      return next;
+    });
+  };
+
+  // Move clip down in sequence order
+  const moveClipDown = (index) => {
+    if (index === clips.length - 1) return;
+    setClips((prev) => {
+      const next = [...prev];
+      const temp = next[index + 1];
+      next[index + 1] = next[index];
+      next[index] = temp;
+      return next;
+    });
+  };
+
+  // Clear all clips
+  const handleClearAll = () => {
+    setClips([]);
+  };
+
   // Run Master Stitch & Automate
   const handleProduceAll = async () => {
     if (!clips.length) {
-      alert('Please upload or add at least 1 to 4 raw clips first.');
+      alert('Please upload or add at least 1 or more raw clips first.');
       return;
     }
 
@@ -177,13 +208,13 @@ export default function MultiClipAutoProducer({ selectedLanguage = 'en', onPacka
         <div className="relative z-10 max-w-3xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold mb-3">
             <Layers className="w-3.5 h-3.5" />
-            Multi-Clip Batch Automation Studio
+            Multi-Clip Batch Automation Studio (Any Number of Clips)
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-2">
-            Upload 4 Raw Footages → 1 Complete YouTube Video
+            Upload Any Number of Raw Footages → 1 Complete YouTube Video
           </h1>
           <p className="text-slate-300 text-sm leading-relaxed mb-6">
-            Upload 2, 3, 4 or more raw video takes. The engine will <b>stitch all footages together</b>, inject <b>hooks</b>, synthesize <b>voiceover in your chosen language</b>, add <b>background music & SFX</b>, generate a <b>viral thumbnail with text</b>, and build complete <b>SEO titles & timestamps</b>.
+            Upload 1, 2, 4, 8, 15 or more raw video takes. The engine will <b>stitch all footages together in order</b>, inject <b>hooks</b>, synthesize <b>voiceover in your chosen language</b>, add <b>background music & SFX</b>, generate a <b>viral thumbnail with text</b>, and build complete <b>SEO titles & timestamps</b>.
           </p>
 
           {/* Quick Topic Input */}
@@ -224,11 +255,22 @@ export default function MultiClipAutoProducer({ selectedLanguage = 'en', onPacka
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Upload className="w-4 h-4 text-indigo-400" />
-                1. Upload Raw Footages (Select 2 to 4+ Clips)
+                1. Upload Raw Footages (Any Number of Clips)
               </h3>
-              <span className="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
-                {clips.length} Clips Selected
-              </span>
+              <div className="flex items-center gap-2">
+                {clips.length > 0 && (
+                  <button
+                    onClick={handleClearAll}
+                    className="text-[11px] text-slate-400 hover:text-red-400 flex items-center gap-1 transition"
+                    title="Clear list"
+                  >
+                    <RotateCcw className="w-3 h-3" /> Clear
+                  </button>
+                )}
+                <span className="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
+                  {clips.length} Clips Queued
+                </span>
+              </div>
             </div>
 
             {/* Drag & Drop Multi-Upload Box */}
@@ -244,7 +286,7 @@ export default function MultiClipAutoProducer({ selectedLanguage = 'en', onPacka
                 <Upload className="w-6 h-6" />
               </div>
               <p className="text-xs font-bold text-white">
-                {isUploading ? 'Uploading Raw Clips...' : 'Drop 4 raw video clips here or click to browse'}
+                {isUploading ? 'Uploading Raw Clips...' : 'Drop any number of raw video clips here (no limit)'}
               </p>
               <p className="text-[11px] text-slate-400 mt-1">
                 Select multiple files at once (MP4, MOV, WEBM)
@@ -277,9 +319,11 @@ export default function MultiClipAutoProducer({ selectedLanguage = 'en', onPacka
             {/* List of Stitched Sequence Clips */}
             {clips.length > 0 && (
               <div className="space-y-2 pt-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                  Stitching Order Sequence:
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    Stitching Sequence (Use ⬆️ ⬇️ to re-order):
+                  </span>
+                </div>
                 <div className="space-y-2">
                   {clips.map((clip, index) => (
                     <div
@@ -293,18 +337,36 @@ export default function MultiClipAutoProducer({ selectedLanguage = 'en', onPacka
                         <div>
                           <p className="text-white font-bold truncate max-w-xs">{clip.originalName}</p>
                           <p className="text-[10px] text-slate-400">
-                            {clip.sizeMB > 0 ? `${clip.sizeMB} MB` : 'Local File'} • Clip {index + 1}
+                            {clip.sizeMB > 0 ? `${clip.sizeMB} MB` : 'Local File'} • Clip {index + 1} of {clips.length}
                           </p>
                         </div>
                       </div>
 
-                      <button
-                        onClick={() => handleRemoveClip(clip.id)}
-                        className="p-1.5 text-slate-400 hover:text-red-400 rounded-lg hover:bg-slate-800 transition"
-                        title="Remove clip"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => moveClipUp(index)}
+                          disabled={index === 0}
+                          className="p-1 text-slate-400 hover:text-white disabled:opacity-30 rounded hover:bg-slate-800 transition"
+                          title="Move earlier"
+                        >
+                          <ChevronUp className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => moveClipDown(index)}
+                          disabled={index === clips.length - 1}
+                          className="p-1 text-slate-400 hover:text-white disabled:opacity-30 rounded hover:bg-slate-800 transition"
+                          title="Move later"
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleRemoveClip(clip.id)}
+                          className="p-1 text-slate-400 hover:text-red-400 rounded hover:bg-slate-800 transition ml-1"
+                          title="Remove clip"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -388,7 +450,7 @@ export default function MultiClipAutoProducer({ selectedLanguage = 'en', onPacka
               ) : (
                 <>
                   <Play className="w-5 h-5 fill-white" />
-                  <span>STITCH & AUTOMATE EVERYTHING (1-CLICK)</span>
+                  <span>STITCH {clips.length > 0 ? `${clips.length} CLIPS` : 'ALL CLIPS'} & AUTOMATE (1-CLICK)</span>
                 </>
               )}
             </button>

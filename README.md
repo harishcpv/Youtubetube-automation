@@ -43,20 +43,21 @@ flowchart TD
 
 ---
 
-## 🎬 4-Clip Batch Auto-Stitcher Pipeline
+## 🎬 Multi-Clip Batch Auto-Stitcher Pipeline (Any Number of Clips)
 
-Upload 2, 3, 4 or more raw video footages. The master automation engine automatically:
-1. **Normalizes & Stitches** all raw takes into one seamless sequence (handling any resolution and duration up to 1 hour).
-2. **Injects Intro Hook** with attention-grabbing animated yellow/black text overlay in the first 4 seconds.
-3. **Generates Native AI Voiceover** in your chosen language (English, Telugu, Hindi, Tamil, Spanish, German, Japanese, etc.).
-4. **Layers Royalty-Free Background Music & SFX** with automated audio ducking (lowers clip audio to 25% under the voiceover).
-5. **Burns Timed Multilingual Subtitles (.SRT)** synchronized with the narration.
-6. **Renders 1280x720 Viral Thumbnail** with 3D text overlay on the video's best keyframe.
-7. **Generates Complete SEO Package** (viral titles, descriptions with chapter timestamps for each clip, and 500-char tags).
+Upload **any number of raw video footages** (1, 2, 3, 4, 8, 15+ clips, no limit). The master automation engine automatically:
+1. **Normalizes & Stitches** all raw takes into one seamless sequence in your customized order (handling any resolution and duration up to 1 hour).
+2. **Re-Order Clips**: Interactive ⬆️ and ⬇️ sequencing controls to arrange your footage story in exact order.
+3. **Injects Intro Hook** with attention-grabbing animated yellow/black text overlay in the first 4 seconds.
+4. **Generates Native AI Voiceover** in your chosen language (English, Telugu, Hindi, Tamil, Spanish, German, Japanese, etc.).
+5. **Layers Royalty-Free Background Music & SFX** with automated audio ducking (lowers clip audio to 25% under the voiceover).
+6. **Burns Timed Multilingual Subtitles (.SRT)** synchronized with the narration.
+7. **Renders 1280x720 Viral Thumbnail** with 3D text overlay on the video's best keyframe.
+8. **Generates Complete SEO Package** (viral titles, descriptions with chapter timestamps for each clip, and 500-char tags).
 
 ```mermaid
 flowchart TD
-    Clips["📹 4 Raw Video Footages\n(Clip 1, Clip 2, Clip 3, Clip 4)"] --> BatchUpload["Batch Ingestion / Local Paths"]
+    Clips["📹 Any Number of Raw Video Footages\n(Clip 1, Clip 2, Clip 3, ... Clip N)"] --> BatchUpload["Batch Ingestion / Local Paths"]
     
     subgraph Engine["⚡ Master Multi-Clip Compositor"]
         direction TB

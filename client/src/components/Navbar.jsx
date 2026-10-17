@@ -23,7 +23,7 @@ export default function Navbar({
   onOpenExport 
 }) {
   const tabs = [
-    { id: 'producer', label: '🎬 4-Clip Auto-Stitcher', icon: Layers, highlight: true },
+    { id: 'producer', label: '🎬 Multi-Clip Stitcher (Any #)', icon: Layers, highlight: true },
     { id: 'autopilot', label: 'Auto-Pilot Mode', icon: Zap },
     { id: 'video', label: 'Video Studio', icon: Video },
     { id: 'policy', label: 'Policy RAG', icon: ShieldCheck },
