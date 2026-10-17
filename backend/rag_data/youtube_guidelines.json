@@ -1,0 +1,158 @@
+[
+  {
+    "id": "cg-violence-01",
+    "category": "Community Guidelines",
+    "title": "Violent or Graphic Content",
+    "summary": "YouTube does not permit violent or gory content that's intended to be shocking, sensational, or disrespectful.",
+    "keywords": ["violence", "gore", "blood", "fight", "accident", "death", "brutality", "assault", "injury", "weapons"],
+    "prohibited": [
+      "Inciting violence against individuals or groups",
+      "Footage of physical fights involving minors",
+      "Graphic depictions of road accidents, dead bodies, or severe injuries without educational context",
+      "Animal abuse or cruelty staged for entertainment"
+    ],
+    "exceptions": "Educational, Documentary, Scientific, or Artistic (EDSA) context, provided clear warnings, blurring, or educational narration is present.",
+    "risk_level": "CRITICAL",
+    "monetization_impact": "Yellow Dollar or Complete Demonetization + Age Restriction",
+    "remediation": "Blur graphic sections, remove sensational sound effects over injuries, add educational commentary or content warnings in intro.",
+    "official_url": "https://support.google.com/youtube/answer/2802008"
+  },
+  {
+    "id": "cg-harassment-02",
+    "category": "Community Guidelines",
+    "title": "Harassment and Cyberbullying",
+    "summary": "Content that targets an individual with prolonged insults, racial/sexual slurs, doxxing, or malicious attacks is strictly prohibited.",
+    "keywords": ["harassment", "bullying", "doxxing", "threat", "insult", "slur", "expose", "target", "defamation", "stalking"],
+    "prohibited": [
+      "Revealing someone's private personal information (doxxing phone numbers, addresses)",
+      "Targeted harassment based on protected attributes (race, gender, sexual orientation)",
+      "Encouraging an audience to abuse, harass, or brigade another channel",
+      "Malicious insults or dehumanizing comparisons"
+    ],
+    "exceptions": "Public interest commentary, satire, or debates between public figures, so long as it does not cross into targeted abuse or personal threats.",
+    "risk_level": "HIGH",
+    "monetization_impact": "Yellow Dollar + Strike risk",
+    "remediation": "Censor personal identifying information, rephrase harsh personal accusations to focus on ideas/actions, remove aggressive call-to-actions.",
+    "official_url": "https://support.google.com/youtube/answer/2802268"
+  },
+  {
+    "id": "cg-misinfo-03",
+    "category": "Community Guidelines",
+    "title": "Misinformation & Harmful Conspiracy",
+    "summary": "Content that misleads viewers and poses a serious risk of egregious real-world harm is forbidden.",
+    "keywords": ["misinformation", "fake news", "cure", "medical advice", "elections", "fraud", "conspiracy", "hoax"],
+    "prohibited": [
+      "Medical advice that contradicts local health authorities or WHO (e.g., miracle cures for fatal diseases)",
+      "Voter suppression or false claims regarding election procedures and dates",
+      "Denial of violent historical events or atrocities"
+    ],
+    "exceptions": "Reporting on misconceptions with clear fact-checking debunking, artistic parody with prominent satire disclaimers.",
+    "risk_level": "CRITICAL",
+    "monetization_impact": "Channel Termination or Strike",
+    "remediation": "Cite accredited scientific sources or peer-reviewed journals, frame discussions as exploratory reporting, add disclaimers.",
+    "official_url": "https://support.google.com/youtube/answer/10834785"
+  },
+  {
+    "id": "cg-dangerous-04",
+    "category": "Community Guidelines",
+    "title": "Harmful or Dangerous Acts & Challenges",
+    "summary": "Content that encourages dangerous or illegal activities that risk serious physical harm or death.",
+    "keywords": ["dangerous", "challenge", "prank", "stunt", "choking", "poison", "tide pod", "fire", "illegal"],
+    "prohibited": [
+      "Extremely dangerous challenges with risk of injury or death",
+      "Pranks that lead victims to fear imminent physical harm or emotional trauma",
+      "Instructions for creating homemade explosives or modifying firearms",
+      "Promoting hard drug use or dangerous prescription abuse"
+    ],
+    "exceptions": "Professional stunt performers with visible safety apparatus and prominent disclaimers ('Do not attempt at home').",
+    "risk_level": "HIGH",
+    "monetization_impact": "Age-gate + Yellow Dollar",
+    "remediation": "Include visible disclaimer banner, do not provide step-by-step instructions for dangerous behaviors, emphasize professional supervision.",
+    "official_url": "https://support.google.com/youtube/answer/2801964"
+  },
+  {
+    "id": "copy-contentid-01",
+    "category": "Copyright & Fair Use",
+    "title": "Content ID Matching & Audio Fingerprinting",
+    "summary": "YouTube automatically scans all uploads against a vast database of copyrighted audio and video recordings owned by labels and studios.",
+    "keywords": ["copyright", "content id", "music", "song", "audio track", "soundtrack", "claim", "strike", "royalty"],
+    "prohibited": [
+      "Using commercial music tracks without a sync/master license (even if credited or under 10 seconds)",
+      "Uploading full movie clips, sports broadcasts, or music videos",
+      "Cover songs without mechanical rights or ad-revenue sharing agreements"
+    ],
+    "exceptions": "YouTube Audio Library (royalty-free), Creative Commons Attribution (CC-BY), or licensed royalty-free libraries (Epidemic Sound, Artlist).",
+    "risk_level": "HIGH",
+    "monetization_impact": "Content ID Claim: 100% Ad Revenue diverted to copyright owner",
+    "remediation": "Replace commercial audio with copyright-safe background music, use YouTube Audio Library, or license through an official service.",
+    "official_url": "https://support.google.com/youtube/answer/2797370"
+  },
+  {
+    "id": "copy-fairuse-02",
+    "category": "Copyright & Fair Use",
+    "title": "Fair Use Doctrine (4-Factor Test)",
+    "summary": "Fair use is a legal doctrine in the US permitting unlicensed use of copyrighted material in certain circumstances such as criticism, commentary, news reporting, teaching, or research.",
+    "keywords": ["fair use", "commentary", "criticism", "reaction", "review", "transformative", "parody", "satire"],
+    "prohibited": [
+      "Mere re-uploading with minimal commentary (e.g. silent reaction videos)",
+      "Using substantial portions of the original work that diminish the commercial market for the original",
+      "Relying on disclaimers like 'No copyright infringement intended' (legally ineffective)"
+    ],
+    "exceptions": "Highly transformative works where the original clip is strictly used to illustrate a specific critical point, parody, or educational analysis.",
+    "risk_level": "MEDIUM",
+    "monetization_impact": "Risk of manual copyright strike if owner disagrees with fair use defense",
+    "remediation": "Keep clip excerpts under 5-10 seconds, speak directly over the clip, add on-screen annotations, zoom or transform visually, provide original critical perspective.",
+    "official_url": "https://support.google.com/youtube/answer/9783148"
+  },
+  {
+    "id": "adsense-language-01",
+    "category": "Advertiser-Friendly Guidelines",
+    "title": "Inappropriate Language & Profanity Rules",
+    "summary": "YouTube strictly monitors swearing and strong profanity, especially in the opening seconds and metadata.",
+    "keywords": ["swearing", "profanity", "f-word", "curse", "vulgar", "language", "bleep", "censor"],
+    "prohibited": [
+      "Strong profanity (e.g., the F-word or explicit sexual curse words) in the first 7-8 seconds of the video",
+      "Vulgar or profanity-laden video titles and custom thumbnails",
+      "Continuous, pervasive profanity throughout the entire video"
+    ],
+    "exceptions": "Moderate language (damn, hell, crap) used casually after the first 8 seconds usually qualifies for full monetization.",
+    "risk_level": "MEDIUM",
+    "monetization_impact": "Yellow Dollar (Limited or No Ads)",
+    "remediation": "Bleep or mute strong expletives during the first 10 seconds; keep titles and thumbnails 100% G-rated for broad advertiser appeal.",
+    "official_url": "https://support.google.com/youtube/answer/6162278"
+  },
+  {
+    "id": "adsense-clickbait-02",
+    "category": "Advertiser-Friendly Guidelines",
+    "title": "Sensationalism & Deceptive Metadata",
+    "summary": "Misleading titles, deceitful thumbnails, or exaggerated claims designed solely to manipulate clicks without delivering the payoff.",
+    "keywords": ["clickbait", "misleading", "fake thumbnail", "exaggeration", "bait and switch", "scam"],
+    "prohibited": [
+      "Thumbnails featuring shocking imagery that never occurs in the video",
+      "Titles making factual promises that are completely refuted or ignored in the video",
+      "Stuffing irrelevant tags in the video description (against YouTube TOS)"
+    ],
+    "exceptions": "Dramatic curiosity hooks that are genuinely resolved and fulfilled inside the video narrative.",
+    "risk_level": "MEDIUM",
+    "monetization_impact": "Reduced algorithmic distribution, shadow-demotion, or viewer refund flags",
+    "remediation": "Ensure the promise in the thumbnail and title is paid off within the first 60 seconds; do not put comma-separated tag blocks inside descriptions.",
+    "official_url": "https://support.google.com/youtube/answer/2801973"
+  },
+  {
+    "id": "shorts-reused-01",
+    "category": "Shorts & Monetization Policies",
+    "title": "Reused Content & Repetitive Shorts",
+    "summary": "YouTube Partner Program (YPP) strictly requires original value. Uploading aggregated compilations or mass-reposted clips from TikTok/Instagram without transformative editing will cause monetization refusal.",
+    "keywords": ["reused content", "compilation", "tiktok repost", "repost", "shorts algorithm", "slideshow", "ai generated slop"],
+    "prohibited": [
+      "Raw screen recordings of other creators' Shorts or TikToks",
+      "Mass automated AI voiceovers reading generic Reddit threads with unrelated gameplay background",
+      "Unmodified podcast clips uploaded without added commentary or narrative editing"
+    ],
+    "exceptions": "Curated commentary, multi-angle analysis, motion graphics, and unique value-add narration.",
+    "risk_level": "HIGH",
+    "monetization_impact": "Disqualification from YouTube Partner Program (YPP)",
+    "remediation": "Add an on-screen face/avatar, personal perspective voiceover, dynamic zoom/crop cuts, custom animations and original graphic overlays.",
+    "official_url": "https://support.google.com/youtube/answer/1311392"
+  }
+]

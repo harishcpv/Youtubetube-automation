@@ -1,0 +1,11 @@
+node_modules/
+client/node_modules/
+client/dist/
+uploads/*
+!uploads/.gitkeep
+outputs/*.mp4
+outputs/thumbnails/*
+!outputs/sfx/
+.env
+.DS_Store
+*.log
