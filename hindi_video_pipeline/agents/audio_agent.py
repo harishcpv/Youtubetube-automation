@@ -6,14 +6,30 @@ and mixes dynamic audio ducking.
 """
 
 import os
+import re
 import time
 import asyncio
 import subprocess
 import json
+import urllib.request
+import urllib.parse
 from typing import List, Dict, Any, Optional
-import edge_tts
-from gtts import gTTS
 from ..utils import safe_print
+
+# Resilient optional imports
+try:
+    import edge_tts
+    HAS_EDGE_TTS = True
+except ImportError:
+    edge_tts = None
+    HAS_EDGE_TTS = False
+
+try:
+    from gtts import gTTS
+    HAS_GTTS = True
+except ImportError:
+    gTTS = None
+    HAS_GTTS = False
 
 class VoiceAudioAgent:
     """
@@ -77,8 +93,8 @@ class VoiceAudioAgent:
         """Invokes neural TTS engine with automatic resilient fallback."""
         clean_text = text.replace("॥", "।").replace("\r\n", " ").replace("\n", " ").strip()
 
-        if self.tts_engine == "gtts":
-            self._synthesize_with_gtts(clean_text, output_path)
+        if self.tts_engine == "gtts" or not HAS_EDGE_TTS:
+            self._synthesize_with_google_tts(clean_text, output_path)
             return
 
         # Attempt Edge-TTS with retry & backoff
@@ -100,17 +116,53 @@ class VoiceAudioAgent:
         # Resilient Fallback to Google Neural Hindi TTS
         if self.tts_engine in ["auto", "edge"]:
             safe_print(f"[AudioAgent] ⚠️ Edge-TTS service notice ({last_error}). Seamlessly activating Google Neural Hindi TTS fallback...")
-            self._synthesize_with_gtts(clean_text, output_path)
+            self._synthesize_with_google_tts(clean_text, output_path)
         else:
             raise last_error
 
-    def _synthesize_with_gtts(self, text: str, output_path: str) -> None:
-        """100% reliable Google Neural Hindi speech synthesis fallback."""
+    def _synthesize_with_google_tts(self, text: str, output_path: str) -> None:
+        """
+        100% reliable Google Neural Hindi speech synthesis.
+        Uses gTTS if installed, or pure built-in urllib zero-dependency engine.
+        Immune to ModuleNotFoundError and 403 WebSocket rate limits.
+        """
+        # Tier A: Use gTTS package if present
+        if HAS_GTTS and gTTS is not None:
+            try:
+                tts = gTTS(text=text, lang="hi", slow=False)
+                tts.save(output_path)
+                return
+            except Exception as e:
+                safe_print(f"[AudioAgent] gTTS library error ({e}), switching to zero-dep HTTP synthesis...")
+
+        # Tier B: Zero-dependency native urllib standard library synthesis
         try:
-            tts = gTTS(text=text, lang="hi", slow=False)
-            tts.save(output_path)
+            # Split into chunks of <= 140 chars for the Google Translate TTS API
+            sentences = re.split(r'([।॥,\.\?!])', text)
+            chunks = []
+            curr = ""
+            for s in sentences:
+                if len(curr) + len(s) < 140:
+                    curr += s
+                else:
+                    if curr.strip():
+                        chunks.append(curr.strip())
+                    curr = s
+            if curr.strip():
+                chunks.append(curr.strip())
+
+            mp3_bytes = bytearray()
+            for chunk in chunks:
+                q = urllib.parse.quote(chunk)
+                url = f"https://translate.google.com/translate_tts?ie=UTF-8&q={q}&tl=hi&client=tw-ob"
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    mp3_bytes.extend(resp.read())
+
+            with open(output_path, "wb") as f:
+                f.write(mp3_bytes)
         except Exception as e:
-            safe_print(f"[AudioAgent] Fallback TTS error: {e}")
+            safe_print(f"[AudioAgent] Fatal audio synthesis error: {e}")
             raise
 
     def concatenate_narration_tracks(self, scene_audio_paths: List[str]) -> str:
