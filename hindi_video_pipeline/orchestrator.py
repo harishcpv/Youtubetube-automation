@@ -8,6 +8,7 @@ import json
 import time
 from typing import Dict, Any, Optional
 from .config import PipelineConfig, STYLE_PRESETS, VOICE_PRESETS
+from .utils import safe_print
 from .agents.script_agent import ScriptAnalystAgent
 from .agents.visual_agent import VisualAssetAgent
 from .agents.audio_agent import VoiceAudioAgent
@@ -39,15 +40,15 @@ class AutonomousPipelineOrchestrator:
         Executes the full autonomous pipeline on the raw Hindi story script.
         Returns paths and metrics for both rendered video formats.
         """
-        print("=" * 80)
-        print("  🚀 AUTONOMOUS HINDI MEDIA PIPELINE (100% Free Multi-Agent Engine)")
-        print("=" * 80)
-        print(f"[*] Story Type:    {self.config.story_type.upper()}")
-        print(f"[*] Visual Style:  {self.config.style_key}")
-        print(f"[*] Voice Preset:  {self.config.voice_key}")
-        print(f"[*] Whisper Model: {self.config.whisper_model}")
-        print(f"[*] Output Dir:    {os.path.abspath(self.config.output_dir)}")
-        print("=" * 80)
+        safe_print("=" * 80)
+        safe_print("  🚀 AUTONOMOUS HINDI MEDIA PIPELINE (100% Free Multi-Agent Engine)")
+        safe_print("=" * 80)
+        safe_print(f"[*] Story Type:    {self.config.story_type.upper()}")
+        safe_print(f"[*] Visual Style:  {self.config.style_key}")
+        safe_print(f"[*] Voice Preset:  {self.config.voice_key}")
+        safe_print(f"[*] Whisper Model: {self.config.whisper_model}")
+        safe_print(f"[*] Output Dir:    {os.path.abspath(self.config.output_dir)}")
+        safe_print("=" * 80)
 
         style_cfg = STYLE_PRESETS.get(self.config.style_key, STYLE_PRESETS["panchatantra-3d"])
         voice_cfg = VOICE_PRESETS.get(self.config.voice_key, VOICE_PRESETS["male"])
@@ -55,7 +56,7 @@ class AutonomousPipelineOrchestrator:
         # ---------------------------------------------------------------------
         # 1. Script Analysis & Master Character Definition
         # ---------------------------------------------------------------------
-        print("\n>>> [STAGE 1/6] Script Analysis & Scene Chunking...")
+        safe_print("\n>>> [STAGE 1/6] Script Analysis & Scene Chunking...")
         script_agent = ScriptAnalystAgent(
             story_type=self.config.story_type,
             default_seed=self.config.seed
@@ -71,7 +72,7 @@ class AutonomousPipelineOrchestrator:
         # ---------------------------------------------------------------------
         # 2. Master Character Reference Image Locking
         # ---------------------------------------------------------------------
-        print("\n>>> [STAGE 2/6] Master Character Reference Generation & Locking...")
+        safe_print("\n>>> [STAGE 2/6] Master Character Reference Generation & Locking...")
         visual_agent = VisualAssetAgent(
             output_dir=self.config.output_dir,
             default_seed=master_char["locked_seed"]
@@ -85,7 +86,7 @@ class AutonomousPipelineOrchestrator:
         # ---------------------------------------------------------------------
         # 3. Audio Narration & Ambient Soundscape Engineering
         # ---------------------------------------------------------------------
-        print("\n>>> [STAGE 3/6] Expressive Hindi Speech & Ambient Drone Audio...")
+        safe_print("\n>>> [STAGE 3/6] Expressive Hindi Speech & Ambient Drone Audio...")
         audio_agent = VoiceAudioAgent(
             voice_id=voice_cfg["id"],
             output_dir=self.config.output_dir,
@@ -116,7 +117,7 @@ class AutonomousPipelineOrchestrator:
         # ---------------------------------------------------------------------
         # 4. Whisper Speech-to-Text & Subtitle Synchronization
         # ---------------------------------------------------------------------
-        print("\n>>> [STAGE 4/6] Whisper Subtitle Generation & Temporal Alignment...")
+        safe_print("\n>>> [STAGE 4/6] Whisper Subtitle Generation & Temporal Alignment...")
         subtitle_agent = SubtitleAgent(
             whisper_model=self.config.whisper_model,
             output_dir=self.config.output_dir
@@ -132,7 +133,7 @@ class AutonomousPipelineOrchestrator:
         # ---------------------------------------------------------------------
         # 5. Character-Consistent Scene Visual Asset Generation
         # ---------------------------------------------------------------------
-        print("\n>>> [STAGE 5/6] Generating Character-Consistent Scene Frames...")
+        safe_print("\n>>> [STAGE 5/6] Generating Character-Consistent Scene Frames...")
         scene_img_paths = visual_agent.generate_all_scenes(
             scenes=scenes_with_audio,
             master_char=master_char,
@@ -149,7 +150,7 @@ class AutonomousPipelineOrchestrator:
         # ---------------------------------------------------------------------
         # 6. Video Assembly & Dual-Format Rendering Engine
         # ---------------------------------------------------------------------
-        print("\n>>> [STAGE 6/6] Video Assembly & Dual-Format Video Rendering...")
+        safe_print("\n>>> [STAGE 6/6] Video Assembly & Dual-Format Video Rendering...")
         video_agent = VideoEditorAgent(
             output_dir=self.config.output_dir,
             fps=self.config.fps
@@ -189,14 +190,14 @@ class AutonomousPipelineOrchestrator:
         self.state["status"] = "completed"
         self._save_state("completed")
 
-        print("\n" + "=" * 80)
-        print("  🎉 PUBLICATION-READY VIDEO RENDERS COMPLETED SUCCESSFULLY!")
-        print("=" * 80)
-        print(f"📺 Long-Form (16:9): {os.path.abspath(longform_output)}")
-        print(f"📱 Short-Form (9:16): {os.path.abspath(shorts_output)}")
-        print(f"🔒 Master Character: {os.path.abspath(master_ref_img)}")
-        print(f"⏱️ Total Video Time: {total_audio_duration:.2f}s | Pipeline Runtime: {self.state['elapsed_seconds']}s")
-        print("=" * 80 + "\n")
+        safe_print("\n" + "=" * 80)
+        safe_print("  🎉 PUBLICATION-READY VIDEO RENDERS COMPLETED SUCCESSFULLY!")
+        safe_print("=" * 80)
+        safe_print(f"📺 Long-Form (16:9): {os.path.abspath(longform_output)}")
+        safe_print(f"📱 Short-Form (9:16): {os.path.abspath(shorts_output)}")
+        safe_print(f"🔒 Master Character: {os.path.abspath(master_ref_img)}")
+        safe_print(f"⏱️ Total Video Time: {total_audio_duration:.2f}s | Pipeline Runtime: {self.state['elapsed_seconds']}s")
+        safe_print("=" * 80 + "\n")
 
         return self.state
 
@@ -207,4 +208,4 @@ class AutonomousPipelineOrchestrator:
             with open(self.state_file, "w", encoding="utf-8") as f:
                 json.dump(self.state, f, indent=2, ensure_ascii=False)
         except Exception as e:
-            print(f"[Orchestrator] Warning: state save failed: {e}")
+            safe_print(f"[Orchestrator] Warning: state save failed: {e}")

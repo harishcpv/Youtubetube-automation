@@ -28,6 +28,8 @@ from hindi_video_pipeline.config import (
     VOICE_PRESETS,
     VIDEO_PROFILES
 )
+from hindi_video_pipeline.utils import configure_utf8_streams, safe_print
+configure_utf8_streams()
 from hindi_video_pipeline.orchestrator import AutonomousPipelineOrchestrator
 
 def check_system_dependencies():
@@ -35,11 +37,11 @@ def check_system_dependencies():
     try:
         res = subprocess.run(["ffmpeg", "-version"], capture_output=True, text=True)
         if res.returncode != 0:
-            print("[ERROR] FFmpeg is installed but returned an error.")
+            safe_print("[ERROR] FFmpeg is installed but returned an error.")
             sys.exit(1)
     except FileNotFoundError:
-        print("[FATAL ERROR] FFmpeg binary was not found in PATH.")
-        print("Please install FFmpeg and ensure 'ffmpeg' and 'ffprobe' are available.")
+        safe_print("[FATAL ERROR] FFmpeg binary was not found in PATH.")
+        safe_print("Please install FFmpeg and ensure 'ffmpeg' and 'ffprobe' are available.")
         sys.exit(1)
 
 def parse_args():
@@ -109,7 +111,7 @@ def main():
         if os.path.exists(demo_path):
             with open(demo_path, "r", encoding="utf-8") as f:
                 script_content = f.read()
-            print(f"[*] Running in --demo mode using: {demo_path}")
+            safe_print(f"[*] Running in --demo mode using: {demo_path}")
         else:
             script_content = (
                 "एक वन में भासुरक नाम का एक घमंडी शेर रहता था। वह प्रतिदिन कई पशुओं को मार डालता था। "
@@ -130,13 +132,13 @@ def main():
         if os.path.exists(default_sample):
             with open(default_sample, "r", encoding="utf-8") as f:
                 script_content = f.read()
-            print(f"[*] No script specified; defaulting to sample: {default_sample}")
+            safe_print(f"[*] No script specified; defaulting to sample: {default_sample}")
         else:
-            print("[ERROR] Please provide a story script via --script <path> or run with --demo.")
+            safe_print("[ERROR] Please provide a story script via --script <path> or run with --demo.")
             sys.exit(1)
 
     if not script_content.strip():
-        print("[ERROR] Script content is empty.")
+        safe_print("[ERROR] Script content is empty.")
         sys.exit(1)
 
     # Establish Timestamped Output Directory
@@ -157,14 +159,14 @@ def main():
     orchestrator = AutonomousPipelineOrchestrator(config)
     result = orchestrator.run(script_content)
 
-    print("\n✅ Autonomous Execution Summary:")
-    print(f"  - Output Directory:    {os.path.abspath(output_dir)}")
-    print(f"  - Long-Form Render:    {os.path.abspath(result['outputs']['longform_16x9'])}")
-    print(f"  - Short-Form Render:   {os.path.abspath(result['outputs']['shorts_9x16'])}")
-    print(f"  - Master Reference:    {os.path.abspath(result['outputs']['master_reference_image'])}")
-    print(f"  - Subtitle Track:      {os.path.abspath(result['outputs']['subtitles_srt'])}")
-    print(f"  - Master Audio Track:  {os.path.abspath(result['outputs']['master_audio'])}")
-    print(f"  - Total Execution Time: {result['elapsed_seconds']}s")
+    safe_print("\n✅ Autonomous Execution Summary:")
+    safe_print(f"  - Output Directory:    {os.path.abspath(output_dir)}")
+    safe_print(f"  - Long-Form Render:    {os.path.abspath(result['outputs']['longform_16x9'])}")
+    safe_print(f"  - Short-Form Render:   {os.path.abspath(result['outputs']['shorts_9x16'])}")
+    safe_print(f"  - Master Reference:    {os.path.abspath(result['outputs']['master_reference_image'])}")
+    safe_print(f"  - Subtitle Track:      {os.path.abspath(result['outputs']['subtitles_srt'])}")
+    safe_print(f"  - Master Audio Track:  {os.path.abspath(result['outputs']['master_audio'])}")
+    safe_print(f"  - Total Execution Time: {result['elapsed_seconds']}s")
 
 if __name__ == "__main__":
     main()

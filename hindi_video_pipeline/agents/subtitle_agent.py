@@ -7,6 +7,7 @@ with professional formatting for YouTube Long-Form and Shorts.
 import os
 import re
 from typing import List, Dict, Any, Optional
+from ..utils import safe_print
 
 class SubtitleAgent:
     """
@@ -35,16 +36,16 @@ class SubtitleAgent:
         time-aligned .srt subtitle file.
         """
         srt_path = os.path.join(self.subs_dir, output_srt_filename)
-        print(f"\n[SubtitleAgent] 📝 Running Whisper speech alignment ({self.whisper_model}) on Hindi audio...")
+        safe_print(f"\n[SubtitleAgent] 📝 Running Whisper speech alignment ({self.whisper_model}) on Hindi audio...")
 
         segments = self._transcribe_with_whisper(audio_path)
 
         if not segments or len(segments) == 0:
-            print("[SubtitleAgent] ⚠️ Whisper segments empty; synthesizing exact SRT from scene durations...")
+            safe_print("[SubtitleAgent] ⚠️ Whisper segments empty; synthesizing exact SRT from scene durations...")
             segments = self._build_fallback_segments_from_scenes(scenes)
 
         self._write_srt_file(segments, srt_path)
-        print(f"[SubtitleAgent] ✅ Time-synced Hindi subtitles generated: {srt_path} ({len(segments)} cues)")
+        safe_print(f"[SubtitleAgent] ✅ Time-synced Hindi subtitles generated: {srt_path} ({len(segments)} cues)")
         return srt_path
 
     def _transcribe_with_whisper(self, audio_path: str) -> List[Dict[str, Any]]:
@@ -52,7 +53,7 @@ class SubtitleAgent:
         try:
             import whisper
             if self._whisper is None:
-                print(f"[SubtitleAgent] Loading Whisper model '{self.whisper_model}'...")
+                safe_print(f"[SubtitleAgent] Loading Whisper model '{self.whisper_model}'...")
                 self._whisper = whisper.load_model(self.whisper_model)
 
             # Supply Hindi Devanagari initial prompt to enforce Devanagari script output
@@ -85,12 +86,12 @@ class SubtitleAgent:
 
             # If Whisper produced non-Devanagari phonetics or empty list, trigger high-fidelity scene alignment
             if not formatted_segments:
-                print("[SubtitleAgent] ℹ️ Aligning original Devanagari script text directly with audio timestamps...")
+                safe_print("[SubtitleAgent] ℹ️ Aligning original Devanagari script text directly with audio timestamps...")
                 return self._build_fallback_segments_from_scenes(scenes)
 
             return formatted_segments
         except Exception as e:
-            print(f"[SubtitleAgent] Whisper execution exception: {e}")
+            safe_print(f"[SubtitleAgent] Whisper execution exception: {e}")
             return []
 
     def _build_fallback_segments_from_scenes(self, scenes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

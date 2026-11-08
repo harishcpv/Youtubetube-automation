@@ -10,6 +10,7 @@ import urllib.request
 import urllib.parse
 from typing import Dict, Any, List, Optional
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from ..utils import safe_print
 
 class VisualAssetAgent:
     """
@@ -41,9 +42,9 @@ class VisualAssetAgent:
         )
         seed = master_char.get("locked_seed", self.default_seed)
 
-        print(f"\n[VisualAgent] 🔒 Generating & Locking Master Character Reference...")
-        print(f"             Character: {master_char['name_hi']} ({master_char['name_en']})")
-        print(f"             Visual Seed: {seed}")
+        safe_print(f"\n[VisualAgent] 🔒 Generating & Locking Master Character Reference...")
+        safe_print(f"             Character: {master_char['name_hi']} ({master_char['name_en']})")
+        safe_print(f"             Visual Seed: {seed}")
 
         success = self._download_ai_image(
             prompt=prompt,
@@ -54,7 +55,7 @@ class VisualAssetAgent:
         )
 
         if not success:
-            print("[VisualAgent] ⚠️ Network generation failed; rendering procedural Master Character Reference...")
+            safe_print("[VisualAgent] ⚠️ Network generation failed; rendering procedural Master Character Reference...")
             self._generate_procedural_fallback(
                 save_path=ref_path,
                 title=f"MASTER REFERENCE: {master_char['name_hi']}",
@@ -63,7 +64,7 @@ class VisualAssetAgent:
             )
 
         self.master_ref_path = ref_path
-        print(f"[VisualAgent] ✅ Master Character Reference locked at: {ref_path}")
+        safe_print(f"[VisualAgent] ✅ Master Character Reference locked at: {ref_path}")
         return ref_path
 
     def generate_all_scenes(
@@ -84,7 +85,7 @@ class VisualAssetAgent:
             img_filename = f"scene_{scene_id:03d}.png"
             img_path = os.path.join(self.frames_dir, img_filename)
 
-            print(f"[VisualAgent] 🎨 Generating Scene {scene_id}/{len(scenes)} with locked seed {seed}...")
+            safe_print(f"[VisualAgent] 🎨 Generating Scene {scene_id}/{len(scenes)} with locked seed {seed}...")
 
             # Strict prompt injection referencing Master Character
             prompt = scene["visual_prompt"]
@@ -97,7 +98,7 @@ class VisualAssetAgent:
             )
 
             if not success:
-                print(f"[VisualAgent] ⚠️ Rendering fallback artistic scene {scene_id}...")
+                safe_print(f"[VisualAgent] ⚠️ Rendering fallback artistic scene {scene_id}...")
                 self._generate_procedural_fallback(
                     save_path=img_path,
                     title=f"दृश्य {scene_id}: {master_char['name_hi']}",
@@ -144,7 +145,7 @@ class VisualAssetAgent:
                     img.verify()
                 return True
             except Exception as e:
-                print(f"[VisualAgent] Attempt {attempt} failed: {e}")
+                safe_print(f"[VisualAgent] Attempt {attempt} failed: {e}")
                 time.sleep(2.5)
         return False
 

@@ -8,6 +8,7 @@ import os
 import subprocess
 from typing import List, Dict, Any
 from ..config import VIDEO_PROFILES
+from ..utils import safe_print
 
 class VideoEditorAgent:
     """
@@ -32,7 +33,7 @@ class VideoEditorAgent:
         cinematic Ken Burns camera motion matching the exact narration duration.
         """
         clip_paths = []
-        print(f"\n[VideoAgent] 🎬 Synthesizing {len(scenes)} cinematic Ken Burns scene clips...")
+        safe_print(f"\n[VideoAgent] 🎬 Synthesizing {len(scenes)} cinematic Ken Burns scene clips...")
 
         for scene in scenes:
             scene_id = scene["scene_id"]
@@ -137,7 +138,7 @@ class VideoEditorAgent:
         Optimized for YouTube main channel (1920x1080).
         """
         final_output = os.path.join(self.output_dir, output_filename)
-        print(f"\n[VideoAgent] 📺 Rendering Long-Form Video (16:9 - 1920x1080)...")
+        safe_print(f"\n[VideoAgent] 📺 Rendering Long-Form Video (16:9 - 1920x1080)...")
 
         profile = VIDEO_PROFILES["longform"]
         escaped_srt = os.path.abspath(srt_path).replace("\\", "/").replace(":", "\\:")
@@ -159,7 +160,7 @@ class VideoEditorAgent:
             final_output
         ]
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        print(f"[VideoAgent] ✅ Long-Form Video rendered: {final_output}")
+        safe_print(f"[VideoAgent] ✅ Long-Form Video rendered: {final_output}")
         return final_output
 
     def render_shorts_9x16(
@@ -175,7 +176,7 @@ class VideoEditorAgent:
         Automatically reframes the 16:9 footage with smart center crop & dynamic vertical subtitles.
         """
         final_output = os.path.join(self.output_dir, output_filename)
-        print(f"\n[VideoAgent] 📱 Rendering Short-Form Video (9:16 - 1080x1920)...")
+        safe_print(f"\n[VideoAgent] 📱 Rendering Short-Form Video (9:16 - 1080x1920)...")
 
         profile = VIDEO_PROFILES["shorts"]
         escaped_srt = os.path.abspath(srt_path).replace("\\", "/").replace(":", "\\:")
@@ -203,5 +204,5 @@ class VideoEditorAgent:
             final_output
         ]
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        print(f"[VideoAgent] ✅ Short-Form Video rendered: {final_output}")
+        safe_print(f"[VideoAgent] ✅ Short-Form Video rendered: {final_output}")
         return final_output

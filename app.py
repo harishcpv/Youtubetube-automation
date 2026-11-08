@@ -23,6 +23,9 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 if CURRENT_DIR not in sys.path:
     sys.path.insert(0, CURRENT_DIR)
 
+from hindi_video_pipeline.utils import configure_utf8_streams, safe_print
+configure_utf8_streams()
+
 from hindi_video_pipeline.config import (
     PipelineConfig,
     STYLE_PRESETS,

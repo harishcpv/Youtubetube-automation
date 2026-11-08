@@ -11,6 +11,7 @@ import subprocess
 import json
 from typing import List, Dict, Any, Optional
 import edge_tts
+from ..utils import safe_print
 
 class VoiceAudioAgent:
     """
@@ -38,7 +39,7 @@ class VoiceAudioAgent:
         Synthesizes individual audio files for each scene and calculates
         their exact duration in seconds.
         """
-        print(f"\n[AudioAgent] 🎙️ Synthesizing expressive Hindi audio using voice: {self.voice_id}...")
+        safe_print(f"\n[AudioAgent] 🎙️ Synthesizing expressive Hindi audio using voice: {self.voice_id}...")
 
         updated_scenes = []
         for scene in scenes:
@@ -47,7 +48,7 @@ class VoiceAudioAgent:
             audio_path = os.path.join(self.audio_dir, audio_filename)
 
             text = scene["hindi_narration"]
-            print(f"[AudioAgent]   - Rendering Scene {scene_id}: \"{text[:35]}...\"")
+            safe_print(f"[AudioAgent]   - Rendering Scene {scene_id}: \"{text[:35]}...\"")
 
             # Run synthesis
             asyncio.run(self._synthesize_track(text, audio_path))
@@ -61,7 +62,7 @@ class VoiceAudioAgent:
             scene_copy["audio_path"] = audio_path
             scene_copy["duration"] = duration
             updated_scenes.append(scene_copy)
-            print(f"[AudioAgent]     Duration: {duration:.2f}s")
+            safe_print(f"[AudioAgent]     Duration: {duration:.2f}s")
 
         return updated_scenes
 
