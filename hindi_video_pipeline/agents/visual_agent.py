@@ -137,17 +137,17 @@ class VisualAssetAgent:
         }
 
         req = urllib.request.Request(url, headers=headers)
-        for attempt in range(1, 4):
+        for attempt in range(1, 3):
             try:
-                with urllib.request.urlopen(req, timeout=35) as resp, open(save_path, "wb") as f:
+                with urllib.request.urlopen(req, timeout=12) as resp, open(save_path, "wb") as f:
                     f.write(resp.read())
                 # Verify image can be parsed by PIL
                 with Image.open(save_path) as img:
                     img.verify()
                 return True
             except Exception as e:
-                safe_print(f"[VisualAgent] Attempt {attempt} failed: {e}")
-                time.sleep(2.5)
+                safe_print(f"[VisualAgent] Attempt {attempt} note: {e}")
+                time.sleep(1.0)
         return False
 
     def _generate_procedural_fallback(
