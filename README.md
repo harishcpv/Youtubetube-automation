@@ -1,8 +1,19 @@
 # 🚀 Youtubetube automation
 
-> **All-in-one autonomous YouTube studio combining 4 specialized AI agents into a single, intuitive, high-performance web application.**
+> **All-in-one autonomous YouTube studio combining specialized AI agents into a single, intuitive, high-performance web application.**
 
 Developed for **P V Harish Chandran** ([@harishcpv](https://github.com/harishcpv) • harishcpv123@gmail.com).
+
+---
+
+### 🕉️ NEW: 100% Free Autonomous Hindi Media Pipeline
+> **Transform raw Hindi mythological and Panchatantra story scripts into finished YouTube Long-Form (16:9) and Shorts (9:16) videos with zero manual intervention.**
+- **Character Consistency:** Locked Master Character Reference Image with seed binding across all scenes.
+- **Natural Voice:** Neural Hindi narration (`hi-IN-MadhurNeural`, `hi-IN-SwaraNeural`) with emotional prosody & ducked Indian Tanpura drone.
+- **Auto Subtitles:** Local Whisper STT + Devanagari `.srt` generation burned via FFmpeg.
+- **Dual-Format Output:** 1920x1080 (16:9) and 1080x1920 (9:16) renders.
+- **Quickstart:** `python pipeline.py --demo` or `python pipeline.py --script sample_panchatantra.txt`
+- Detailed documentation: [**`README_PIPELINE.md`**](./README_PIPELINE.md)
 
 ---
 
