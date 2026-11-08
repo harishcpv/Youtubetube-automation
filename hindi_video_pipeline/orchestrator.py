@@ -90,7 +90,8 @@ class AutonomousPipelineOrchestrator:
         audio_agent = VoiceAudioAgent(
             voice_id=voice_cfg["id"],
             output_dir=self.config.output_dir,
-            ducking_db=self.config.bgm_volume_db
+            ducking_db=self.config.bgm_volume_db,
+            tts_engine=getattr(self.config, "tts_engine", "auto")
         )
         # Synthesize audio for each individual scene and measure exact durations
         scenes_with_audio = audio_agent.synthesize_scenes_audio(raw_scenes)

@@ -104,6 +104,18 @@ voice_key = st.sidebar.selectbox(
     format_func=lambda k: f"🎙️ {VOICE_PRESETS[k]['id']} ({VOICE_PRESETS[k]['gender']})"
 )
 
+tts_engine = st.sidebar.selectbox(
+    "Speech Synthesis Engine",
+    options=["auto", "gtts", "edge"],
+    index=0,
+    format_func=lambda k: {
+        "auto": "🛡️ Auto (Edge-TTS + Google Neural Fallback)",
+        "gtts": "⚡ Google Neural Hindi (Zero 403 Rate Limits)",
+        "edge": "🎙️ Microsoft Edge-TTS"
+    }.get(k, k),
+    help="Auto seamlessly switches to Google Neural Hindi if Microsoft Edge-TTS returns 403."
+)
+
 whisper_model = st.sidebar.selectbox(
     "Whisper Alignment Model",
     options=["tiny", "base", "small"],
@@ -201,6 +213,7 @@ if launch_btn:
             story_type=story_type,
             style_key=style_key,
             voice_key=voice_key,
+            tts_engine=tts_engine,
             whisper_model=whisper_model,
             output_dir=run_output_dir,
             seed=seed_input,

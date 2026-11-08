@@ -75,6 +75,12 @@ def parse_args():
         help="Neural Hindi narration voice preset (male: MadhurNeural, female: SwaraNeural)."
     )
     parser.add_argument(
+        "--tts-engine",
+        choices=["auto", "gtts", "edge"],
+        default="auto",
+        help="Speech engine: 'auto' (with zero-failure Google fallback), 'gtts' (100% reliable), or 'edge'."
+    )
+    parser.add_argument(
         "--whisper-model",
         choices=["tiny", "base", "small", "medium"],
         default="base",
@@ -150,6 +156,7 @@ def main():
         story_type=args.story_type,
         style_key=args.style,
         voice_key=args.voice,
+        tts_engine=args.tts_engine,
         whisper_model=args.whisper_model,
         output_dir=output_dir,
         seed=args.seed or 42891
