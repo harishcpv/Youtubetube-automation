@@ -124,7 +124,8 @@ class VisualAssetAgent:
         Fetches an AI-generated image using the free Pollinations.ai API
         with seed locking, model selection, and error handling.
         """
-        encoded_prompt = urllib.parse.quote(prompt[:380])
+        clean_prompt = prompt.replace("\n", " ").replace("\r", "").replace('"', '').strip()[:240]
+        encoded_prompt = urllib.parse.quote(clean_prompt)
         # Pollinations free tier is unlimited and 100% free with default model / turbo
         url = (
             f"https://image.pollinations.ai/prompt/{encoded_prompt}"
